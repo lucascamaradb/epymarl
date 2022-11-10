@@ -1,0 +1,105 @@
+{
+  "artifacts": [],
+  "command": "my_main",
+  "experiment": {
+    "base_dir": "/home/camaral/code/epymarl/src",
+    "dependencies": [
+      "munch==2.5.0",
+      "numpy==1.21.6",
+      "PyYAML==5.3.1",
+      "sacred==0.8.2",
+      "torch==1.13.0"
+    ],
+    "mainfile": "main.py",
+    "name": "pymarl",
+    "repositories": [
+      {
+        "commit": "36f84898941077a8366a409d01ace89a8047e3f8",
+        "dirty": true,
+        "url": "git@github.com:lucascamaradb/epymarl.git"
+      },
+      {
+        "commit": "36f84898941077a8366a409d01ace89a8047e3f8",
+        "dirty": true,
+        "url": "git@github.com:lucascamaradb/epymarl.git"
+      },
+      {
+        "commit": "36f84898941077a8366a409d01ace89a8047e3f8",
+        "dirty": true,
+        "url": "git@github.com:lucascamaradb/epymarl.git"
+      }
+    ],
+    "sources": [
+      [
+        "main.py",
+        "_sources/main_1113354f1c3dc5c8b59090bb3a002c82.py"
+      ],
+      [
+        "run.py",
+        "_sources/run_f21e359a045e155e201825e0f2221467.py"
+      ],
+      [
+        "utils/logging.py",
+        "_sources/logging_be70d3335f3cbe02b1918409217d0f2f.py"
+      ]
+    ]
+  },
+  "heartbeat": "2022-11-10T16:44:12.575393",
+  "host": {
+    "ENV": {},
+    "cpu": "Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
+    "gpus": {
+      "driver_version": "470.141.03",
+      "gpus": [
+        {
+          "model": "Quadro RTX 4000",
+          "persistence_mode": false,
+          "total_memory": 7948
+        }
+      ]
+    },
+    "hostname": "kw60902",
+    "os": [
+      "Linux",
+      "Linux-5.4.0-126-generic-x86_64-with-debian-buster-sid"
+    ],
+    "python_version": "3.7.13"
+  },
+  "meta": {
+    "command": "my_main",
+    "options": {
+      "--beat-interval": null,
+      "--capture": null,
+      "--comment": null,
+      "--debug": false,
+      "--enforce_clean": false,
+      "--file_storage": null,
+      "--force": false,
+      "--help": false,
+      "--loglevel": null,
+      "--mongo_db": null,
+      "--name": null,
+      "--pdb": false,
+      "--print-config": false,
+      "--priority": null,
+      "--queue": false,
+      "--s3": null,
+      "--sql": null,
+      "--tiny_db": null,
+      "--unobserved": false,
+      "COMMAND": null,
+      "UPDATE": [
+        "env_args.key=robot_gym.env:GridWorld-10x10-10a-10o-v0",
+        "save_model=True",
+        "save_path=/home/camaral/scratch/runs"
+      ],
+      "help": false,
+      "with": true
+    }
+  },
+  "resources": [],
+  "result": null,
+  "start_time": "2022-11-10T15:04:50.329783",
+  "status": "INTERRUPTED",
+  "stop_time": "2022-11-10T16:44:12.667286"
+}

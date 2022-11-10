@@ -35,6 +35,7 @@ torch
 torchvision
 tornado==5.1.1
 urllib3==1.23
+wandb
 websocket-client==0.53.0
 whichcraft==0.5.2
 wrapt==1.10.11

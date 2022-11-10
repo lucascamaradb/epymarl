@@ -4,7 +4,6 @@ import pprint
 import time
 import threading
 import torch as th
-import wandb
 from types import SimpleNamespace as SN
 from utils.logging import Logger
 from utils.timehelper import time_left, time_str
@@ -42,9 +41,6 @@ def run(_run, _config, _log):
     unique_token = f"{_config['name']}_seed{_config['seed']}_{map_name}_{datetime.datetime.now()}"
 
     args.unique_token = unique_token
-    if args.wandb_sweep:
-        wandb.run.summary["unique_token"] = unique_token
-
     if args.use_tensorboard:
         tb_logs_direc = os.path.join(
             _config["save_path"], dirname(dirname(abspath(__file__))), "results", "tb_logs"
