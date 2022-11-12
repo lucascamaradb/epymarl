@@ -57,7 +57,8 @@ def train(config=None):
             os.makedirs(save_path)
 
         # Define script to call
-        txt_args = f'main.py --config={config.config} --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
+        n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 52
+        txt_args = f'main.py --config={config.config} --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True batch_size_run={n_parallel}'
         # txt_args = f'main.py --config=maddpg --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         print("python3 " + txt_args)
         # print(txt_args.split(' '))
