@@ -47,6 +47,7 @@ class Logger:
 
         if self.wandb:
             wandb.log({key: value}, step=t)
+            # print("LOGGING TO WANDB: %s" % {key: value})
 
     def print_recent_stats(self):
         log_str = "Recent Stats | t_env: {:>10} | Episode: {:>8}\n".format(*self.stats["episode"][-1])
@@ -73,7 +74,8 @@ def get_logger():
     formatter = logging.Formatter('[%(levelname)s %(asctime)s] %(name)s %(message)s', '%H:%M:%S')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-    logger.setLevel('DEBUG')
+    # logger.setLevel('DEBUG')
+    logger.setLevel('INFO')
 
     return logger
 

@@ -67,6 +67,8 @@ def _compute_combinations(config_file, shuffle, seeds):
 
 def work(cmd):
     cmd = cmd.split(" ")
+    # print(cmd)
+    # return 0
     return subprocess.call(cmd, shell=False)
 
 

@@ -11,6 +11,8 @@ import sys
 import torch as th
 from utils.logging import get_logger
 import yaml
+import wandb
+import traceback
 
 from run import run
 
@@ -31,6 +33,25 @@ def my_main(_run, _config, _log):
     np.random.seed(config["seed"])
     th.manual_seed(config["seed"])
     config['env_args']['seed'] = config["seed"]
+    # config['run_id'] = wandb.run.id
+
+    # If global path is defined, overwrite results_path
+    if config["save_path"]:
+        assert os.path.isdir(config["save_path"]), f"Invalid results path was provided: {config['save_path']}"
+        results_path = config["save_path"]
+
+    # Save to disk by default for sacred
+    logger.info("Saving to FileStorageObserver in results/sacred.")
+    print(config)
+    try:
+        map_name = config["env_args"]["key"]
+    except:
+        map_name = config["env_args"]["map_name"]
+    file_obs_path = os.path.join(results_path, f"sacred/{config['name']}/{map_name}")
+    print(f"Sacred saving to: {file_obs_path}")
+
+    # ex.observers.append(MongoObserver(db_name="marlbench")) #url='172.31.5.187:27017'))
+    ex.observers.append(FileStorageObserver.create(file_obs_path))
 
     # run the framework
     run(_run, config, _log)
@@ -70,9 +91,11 @@ def config_copy(config):
     else:
         return deepcopy(config)
 
-
-if __name__ == '__main__':
-    params = deepcopy(sys.argv)
+def main_from_arg(argv):
+    # print(argv)
+    params = deepcopy(argv)
+    # print(params)
+    # print("\n\n\n\n\n\n\n\n\n\n\n")
     th.set_num_threads(1)
 
     # Get the defaults from default.yaml
@@ -94,7 +117,6 @@ if __name__ == '__main__':
     except:
         map_name = config_dict["env_args"]["key"]    
     
-    
     # now add all the config to sacred
     ex.add_config(config_dict)
     
@@ -104,18 +126,21 @@ if __name__ == '__main__':
         elif param.startswith("env_args.key"):
             map_name = param.split("=")[1]
 
-    # If global path is defined, overwrite results_path
-    if config_dict["save_path"]:
-        assert os.path.isdir(config_dict["save_path"]), f"Invalid results path was provided: {config_dict['save_path']}"
-        results_path = config_dict["save_path"]
+    # # Save to disk by default for sacred
+    # logger.info("Saving to FileStorageObserver in results/sacred.")
+    # file_obs_path = os.path.join(results_path, f"sacred/{config_dict['name']}/{map_name}")
 
-    # Save to disk by default for sacred
-    logger.info("Saving to FileStorageObserver in results/sacred.")
-    file_obs_path = os.path.join(results_path, f"sacred/{config_dict['name']}/{map_name}")
+    # # ex.observers.append(MongoObserver(db_name="marlbench")) #url='172.31.5.187:27017'))
+    # ex.observers.append(FileStorageObserver.create(file_obs_path))
 
-    # ex.observers.append(MongoObserver(db_name="marlbench")) #url='172.31.5.187:27017'))
-    ex.observers.append(FileStorageObserver.create(file_obs_path))
     # ex.observers.append(MongoObserver())
 
-    ex.run_commandline(params)
+    try:
+        ex.run_commandline(params)
+    except Exception as e:
+        # exit gracefully, so wandb logs the problem
+        print(traceback.print_exc(), file=sys.stderr)
+        exit(1)
 
+if __name__ == '__main__':
+    main_from_arg(sys.argv)

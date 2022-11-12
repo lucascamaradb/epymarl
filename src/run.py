@@ -54,7 +54,7 @@ def run(_run, _config, _log):
 
     # ADD WANDB
     if args.wandb_sweep:
-        logger.setup_wandb(args.wandb)
+        logger.setup_wandb(args.wandb_sweep)
 
     # sacred is on by default
     logger.setup_sacred(_run)
@@ -64,7 +64,10 @@ def run(_run, _config, _log):
 
     # Upload files to WANDB
     if args.wandb_sweep:
-        pass
+        art = wandb.Artifact("saved_models", type="model")
+        art.add_dir(args.save_path)
+        wandb.run.log_artifact(art)
+        # wandb.save(os.path.join(args.save_path, '*'))
 
     # Clean up after finishing
     print("Exiting Main")
@@ -73,7 +76,8 @@ def run(_run, _config, _log):
     for t in threading.enumerate():
         if t.name != "MainThread":
             print("Thread {} is alive! Is daemon: {}".format(t.name, t.daemon))
-            t.join(timeout=1)
+            t.join(timeout=10)
+            # t.join()
             print("Thread joined")
 
     print("Exiting script")
@@ -94,6 +98,10 @@ def evaluate_sequential(args, runner):
 
 
 def run_sequential(args, logger):
+
+    # print("TESTING SOMETHING")
+    # print(args.run_id)
+    # print('TEST AGAIN')
 
     # Init runner so we can get env info
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
@@ -148,7 +156,7 @@ def run_sequential(args, logger):
 
         if not os.path.isdir(args.checkpoint_path):
             logger.console_logger.info(
-                "Checkpoint directiory {} doesn't exist".format(args.checkpoint_path)
+                "Checkpoint directory {} doesn't exist".format(args.checkpoint_path)
             )
             return
 
@@ -235,6 +243,7 @@ def run_sequential(args, logger):
             model_save_time = runner.t_env
             save_path = os.path.join(
                 args.save_path, args.local_results_path, "models", args.unique_token, str(runner.t_env)
+                # args.save_path, args.run_id, args.local_results_path, "models", args.unique_token, str(runner.t_env)
             )
             # "results/models/{}".format(unique_token)
             os.makedirs(save_path, exist_ok=True)
