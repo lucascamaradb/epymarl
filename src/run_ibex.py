@@ -40,7 +40,7 @@ def train(config=None):
         config = wandb.config
         # print(config)
         # print(dir(wandb.run))
-        # np.random.seed(config.seed)
+        np.random.seed(config.seed)
 
         # Save path
         save_path = scratch_dir + run.id + "/"
@@ -57,8 +57,8 @@ def train(config=None):
             os.makedirs(save_path)
 
         # Define script to call
-        # txt_args = f'main.py --config={config.config} --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-        txt_args = f'main.py --config=maddpg --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
+        txt_args = f'main.py --config={config.config} --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
+        # txt_args = f'main.py --config=maddpg --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         print("python3 " + txt_args)
         # print(txt_args.split(' '))
 
@@ -75,5 +75,5 @@ if __name__ == "__main__":
 
     sweep_id = wandb_root + args.wandb_sweep
     online = args.online
-    # wandb.agent(sweep_id, train)
-    wandb.agent(sweep_id, train, count=1)
+    wandb.agent(sweep_id, train)
+    # wandb.agent(sweep_id, train, count=1)

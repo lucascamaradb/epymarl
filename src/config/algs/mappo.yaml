@@ -8,7 +8,7 @@ runner: "parallel"
 buffer_size: 10
 # batch_size_run: 10
 batch_size_run: 52
-batch_size: 52
+batch_size: 10
 
 env_args:
   state_last_action: False # critic adds last action internally
