@@ -72,13 +72,13 @@ def run(_run, _config, _log):
     # Clean up after finishing
     print("Exiting Main")
 
-    print("Stopping all threads")
-    for t in threading.enumerate():
-        if t.name != "MainThread":
-            print("Thread {} is alive! Is daemon: {}".format(t.name, t.daemon))
-            t.join(timeout=10)
-            # t.join()
-            print("Thread joined")
+    # print("Stopping all threads")
+    # for t in threading.enumerate():
+    #     if t.name != "MainThread":
+    #         print("Thread {} is alive! Is daemon: {}".format(t.name, t.daemon))
+    #         t.join(timeout=10)
+    #         # t.join()
+    #         print("Thread joined")
 
     print("Exiting script")
 
