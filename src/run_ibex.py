@@ -48,7 +48,7 @@ def train(config=None):
             os.makedirs(save_path)
         
         # Define environment key
-        env_key = f'robot_gym.env:GridWorld-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-v0'
+        env_key = f'robot_gym.env:GridWorld-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}-v0'
         print(f"Environment: " + env_key)
 
         # Define save path
