@@ -38,9 +38,8 @@ def train(config=None):
     mode = "online" if online else "offline"
     with wandb.init(config=config, mode=mode) as run:
         config = wandb.config
-        # print(config)
-        # print(dir(wandb.run))
         np.random.seed(config.seed)
+        if IBEX: run.summary["ibex_job_id"] = os.environ["SLURM_JOBID"]
 
         # Save path
         save_path = scratch_dir + run.id + "/"
