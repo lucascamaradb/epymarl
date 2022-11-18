@@ -7,11 +7,12 @@ import threading
 import robot_gym
 
 IBEX = True if os.path.exists("/ibex/scratch/camaral/") else False
+usr_name = "camaral" if os.path.exists("/home/camaral") else "lucas"
 online = True if IBEX else False
 scratch_dir = "/ibex/scratch/camaral/runs/" if IBEX \
-    else "/home/camaral/scratch/runs/"
+    else f"/home/{usr_name}/scratch/runs/"
 wandb_root = "lucascamara/gridworld/"
-base_dir = "/home/camaral/code/epymarl"
+base_dir = f"/home/{usr_name}/code/epymarl"
 # sys.path.append(base_dir)
 
 import main
