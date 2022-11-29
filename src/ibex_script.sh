@@ -8,7 +8,7 @@
 #SBATCH -e /ibex/scratch/camaral/runs/RobotSweep.%J.err
 #SBATCH --mail-user=lucas.camaradantasbezerra@kaust.edu.sa
 #SBATCH --mail-type=ALL
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 #SBATCH --mem=64G
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=[gpu]
@@ -17,5 +17,4 @@
 conda activate epymarl
 cd /home/camaral/code/epymarl/src
 # git pull
-# python run_ibex.py 692eykgt -o
-python run_ibex.py 4cqd6rft -o
+python run_ibex.py s5ofwsad -o
