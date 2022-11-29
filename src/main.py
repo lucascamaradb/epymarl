@@ -39,6 +39,8 @@ def my_main(_run, _config, _log):
     if config["save_path"]:
         assert os.path.isdir(config["save_path"]), f"Invalid results path was provided: {config['save_path']}"
         results_path = config["save_path"]
+    else:
+        results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 
     # Save to disk by default for sacred
     logger.info("Saving to FileStorageObserver in results/sacred.")
