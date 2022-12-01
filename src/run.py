@@ -62,12 +62,22 @@ def run(_run, _config, _log):
     # Run and train
     run_sequential(args=args, logger=logger)
 
+    # Add best mean return to the run summary
+    ret_lst = []
+    for entry in wandb.run.history():
+        try:
+            ret_lst.append((entry["_step"], entry["test_return_mean"]))
+        except KeyError:
+            pass
+    idx = max(range(len(ret_lst)), key=[x[1] for x in ret_lst].__getitem__)
+    wandb.run.summary["best_test_return_mean"] = ret_lst[idx][1]
+    wandb.run.summary["best_test_return_mean_step"] = ret_lst[idx][0]
+
     # Upload files to WANDB
     if args.wandb_sweep:
-        art = wandb.Artifact("saved_models", type="model")
+        art = wandb.Artifact(name="models_"+unique_token, type="model")
         art.add_dir(args.save_path)
         wandb.run.log_artifact(art)
-        # wandb.save(os.path.join(args.save_path, '*'))
 
     # Clean up after finishing
     print("Exiting Main")
