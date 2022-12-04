@@ -48,7 +48,8 @@ def train(config=None):
             os.makedirs(save_path)
         
         # Define environment key
-        env_key = f'robot_gym.env:GridWorld-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}c-{config["robot_gym.agent_range"]}v-v0'
+        # env_key = f'robot_gym.env:GridWorld-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}c-{config["robot_gym.agent_range"]}v-v0'
+        env_key = f'robot_gym.env:GridWorld-MultiLevel-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}c-{config["robot_gym.agent_range"]}v-v0'
         print(f"Environment: " + env_key)
 
         # Define save path
@@ -58,16 +59,14 @@ def train(config=None):
 
         # Define script to call
         n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 52
-        txt_args = f'main.py --config={config.config} --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True batch_size_run={n_parallel}'
+        txt_args = f'main.py --config={config.config} --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
+        if config.config != "qmix": txt_args += f" batch_size_run={n_parallel}"
         # txt_args = f'main.py --config=maddpg --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         print("python3 " + txt_args)
         # print(txt_args.split(' '))
 
         # # Run EPyMARL training script
         main.main_from_arg(txt_args.split(' '))
-
-
-
 
 if __name__ == "__main__":
     parser.add_argument("wandb_sweep", type=str, help="WANDB Sweep ID")
