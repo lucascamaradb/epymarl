@@ -13,7 +13,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=[gpu]
 
-
+conda init bash
 conda activate epymarl
 cd /home/camaral/code/epymarl/src
 # git pull
