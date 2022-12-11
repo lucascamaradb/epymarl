@@ -28,6 +28,8 @@ class Logger:
     
     def setup_wandb(self, wandb_sweep):
         self.wandb = wandb_sweep
+        self.best_return = 0
+        self.best_return_step = 0
 
     def log_stat(self, key, value, t, to_sacred=True):
         self.stats[key].append((t, value))
@@ -47,6 +49,11 @@ class Logger:
 
         if self.wandb:
             wandb.log({key: value}, step=t)
+            if key=="test_return_mean" and value > self.best_return:
+                self.best_return = value
+                self.best_return_step = t
+                wandb.run.summary["best_test_return_mean"] = value
+                wandb.run.summary["best_test_return_mean_step"] = t
             # print("LOGGING TO WANDB: %s" % {key: value})
 
     def print_recent_stats(self):

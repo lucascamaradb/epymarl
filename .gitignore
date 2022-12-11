@@ -250,5 +250,6 @@ $RECYCLE.BIN/
 
 ####################################
 # WANDB files
+wandb
 src/wandb
 src/dcgm

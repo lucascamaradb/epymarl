@@ -48,12 +48,13 @@ def train(config=None):
         save_path = scratch_dir + run.id + "/"
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-        
+
         # Define environment key
         # env_key = f'robot_gym.env:GridWorld-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}c-{config["robot_gym.agent_range"]}v-v0'
         # env_key = f'robot_gym.env:GridWorld-MultiLevel-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}c-{config["robot_gym.agent_range"]}v-v0'
         env_key = register_env(run.id, config)
         print(f"Environment: {env_key}")
+
 
         # Define save path
         save_path = scratch_dir + run.id + "/"
@@ -64,30 +65,32 @@ def train(config=None):
         n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 52
         txt_args = f'main.py --config={config.config} --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         if config.config != "qmix": txt_args += f" batch_size_run={n_parallel}"
-        # txt_args = f'main.py --config=maddpg --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
+        # txt_args = f'main.py --config=qmix --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         print("python3 " + txt_args)
-        # print(txt_args.split(' '))
 
         # # Run EPyMARL training script
         main.main_from_arg(txt_args.split(' '))
 
 def register_env(id,config):
     env_id = f"GridWorld-Custom-{id}-v0"
-    register(
-        id=env_id,
-        entry_point="robot_gym.env:GridWorldEnv",
-        kwargs={
+    kwargs={
             "sz": (config["robot_gym.size"], config["robot_gym.size"]),
             "n_agents": config["robot_gym.N_agents"],
             "n_obj": config["robot_gym.N_obj"],
             "render": False,
             "comm": config["robot_gym.N_comm"],
-            # "view_range": config["robot_gym.view_range"],
-            "view_range": config["robot_gym.agent_range"],
-            "comm_range": config["robot_gym.agent_range"],
+            "view_range": config["robot_gym.view_range"],
+            "comm_range": config["robot_gym.comm_range"],
+            "Lsec": config["robot_gym.Lsec"],
             "one_hot_obj_lvl": True,
             "max_obj_lvl": 3,
-        },
+        }
+    print(kwargs)
+
+    register(
+        id=env_id,
+        entry_point="robot_gym.env:GridWorldEnv",
+        kwargs=kwargs,
     )
     return env_id
 
@@ -97,7 +100,7 @@ if __name__ == "__main__":
     try:
         args = parser.parse_args()
     except:
-        args = parser.parse_args(["lo6mqvy5"])
+        args = parser.parse_args(["pe2g4usq"])
 
     sweep_id = wandb_root + args.wandb_sweep
     online = args.online
