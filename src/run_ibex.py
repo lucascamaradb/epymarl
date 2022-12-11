@@ -6,6 +6,8 @@ import argparse
 import threading
 import robot_gym
 
+from gym.envs.registration import register
+
 IBEX = True if os.path.exists("/ibex/scratch/camaral/") else False
 usr_name = "camaral" if os.path.exists("/home/camaral") else "lucas"
 online = True if IBEX else False
@@ -49,8 +51,9 @@ def train(config=None):
         
         # Define environment key
         # env_key = f'robot_gym.env:GridWorld-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}c-{config["robot_gym.agent_range"]}v-v0'
-        env_key = f'robot_gym.env:GridWorld-MultiLevel-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}c-{config["robot_gym.agent_range"]}v-v0'
-        print(f"Environment: " + env_key)
+        # env_key = f'robot_gym.env:GridWorld-MultiLevel-{config["robot_gym.size"]}x{config["robot_gym.size"]}-{config["robot_gym.N_agents"]}a-{config["robot_gym.N_obj"]}o-{config["robot_gym.N_comm"]}c-{config["robot_gym.agent_range"]}v-v0'
+        env_key = register_env(run.id, config)
+        print(f"Environment: {env_key}")
 
         # Define save path
         save_path = scratch_dir + run.id + "/"
@@ -68,10 +71,33 @@ def train(config=None):
         # # Run EPyMARL training script
         main.main_from_arg(txt_args.split(' '))
 
+def register_env(id,config):
+    env_id = f"GridWorld-Custom-{id}-v0"
+    register(
+        id=env_id,
+        entry_point="robot_gym.env:GridWorldEnv",
+        kwargs={
+            "sz": (config["robot_gym.size"], config["robot_gym.size"]),
+            "n_agents": config["robot_gym.N_agents"],
+            "n_obj": config["robot_gym.N_obj"],
+            "render": False,
+            "comm": config["robot_gym.N_comm"],
+            # "view_range": config["robot_gym.view_range"],
+            "view_range": config["robot_gym.agent_range"],
+            "comm_range": config["robot_gym.agent_range"],
+            "one_hot_obj_lvl": True,
+            "max_obj_lvl": 3,
+        },
+    )
+    return env_id
+
 if __name__ == "__main__":
     parser.add_argument("wandb_sweep", type=str, help="WANDB Sweep ID")
     parser.add_argument("-o", "--online", action="store_true", help="Upload experiment to WANDB")
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except:
+        args = parser.parse_args(["lo6mqvy5"])
 
     sweep_id = wandb_root + args.wandb_sweep
     online = args.online
