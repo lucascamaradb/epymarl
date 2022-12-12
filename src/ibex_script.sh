@@ -13,8 +13,8 @@
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=[gpu]
 
-conda init bash
-conda activate epymarl
+# conda init bash
+# conda activate epymarl
 cd /home/camaral/code/epymarl/src
 # git pull
 python run_ibex.py 53fib3qa -o

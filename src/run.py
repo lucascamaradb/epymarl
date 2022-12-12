@@ -64,7 +64,8 @@ def run(_run, _config, _log):
 
     # Upload files to WANDB
     if args.wandb_sweep:
-        art = wandb.Artifact(name="models_"+unique_token, type="model")
+        # art = wandb.Artifact(name="models_"+unique_token, type="model")
+        art = wandb.Artifact(name="models_"+wandb.run.id, type="model")
         art.add_dir(args.save_path)
         wandb.run.log_artifact(art)
 
