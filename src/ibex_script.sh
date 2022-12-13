@@ -8,7 +8,7 @@
 #SBATCH -e /ibex/scratch/camaral/runs/RobotSweep.%J.err
 #SBATCH --mail-user=lucas.camaradantasbezerra@kaust.edu.sa
 #SBATCH --mail-type=ALL
-#SBATCH --time=48:00:00
+#SBATCH --time=24:00:00
 #SBATCH --mem=64G
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=[gpu]

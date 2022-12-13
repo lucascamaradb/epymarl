@@ -9,6 +9,7 @@ from types import SimpleNamespace as SN
 from utils.logging import Logger
 from utils.timehelper import time_left, time_str
 from os.path import dirname, abspath
+import shutil
 
 from learners import REGISTRY as le_REGISTRY
 from runners import REGISTRY as r_REGISTRY
@@ -62,12 +63,19 @@ def run(_run, _config, _log):
     # Run and train
     run_sequential(args=args, logger=logger)
 
-    # Upload files to WANDB
+    # Upload best model to WANDB
     if args.wandb_sweep:
         # art = wandb.Artifact(name="models_"+unique_token, type="model")
         art = wandb.Artifact(name="models_"+wandb.run.id, type="model")
-        art.add_dir(args.save_path)
+        try:
+            path = closest_model(save_path+"results/models/"+unique_token+"/", logger.best_return_step)
+            art.add_dir(path)
+        except:
+            print("WARNING: SAVING ALL MODELS")
+            art.add_dir(args.save_path)
         wandb.run.log_artifact(art)
+        # Delete local files
+        shutil.rmtree(args.save_path)
 
     # Clean up after finishing
     print("Exiting Main")
@@ -84,6 +92,16 @@ def run(_run, _config, _log):
 
     # Making sure framework really exits
     # os._exit(os.EX_OK)
+
+
+def closest_model(save_path, best_ind):
+    dirs = [x[0] for x in os.walk(save_path)][1:]
+    dirs = [int(x.split('/')[-1]) for x in dirs]
+    dirs.sort()
+    for d in dirs:
+        if d >= best_ind:
+            break
+    return save_path+str(d)+"/"
 
 
 def evaluate_sequential(args, runner):
@@ -277,3 +295,8 @@ def args_sanity_check(config, _log):
         ) * config["batch_size_run"]
 
     return config
+
+
+if __name__=="__main__":
+    a=closest_model("/home/camaral/scratch/runs/o2wxer3s/results/models/mappo_seed20_GridWorld-Custom-o2wxer3s-v0_2022-12-13 18:26:24.251571/", 100000)
+    print(a)
