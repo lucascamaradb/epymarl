@@ -68,7 +68,7 @@ def run(_run, _config, _log):
         # art = wandb.Artifact(name="models_"+unique_token, type="model")
         art = wandb.Artifact(name="models_"+wandb.run.id, type="model")
         try:
-            path = closest_model(save_path+"results/models/"+unique_token+"/", logger.best_return_step)
+            path = closest_model(args.save_path+"results/models/"+unique_token+"/", logger.best_return_step)
             art.add_dir(path)
         except:
             print("WARNING: SAVING ALL MODELS")
