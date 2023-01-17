@@ -17,4 +17,4 @@
 # conda activate epymarl
 cd /home/camaral/code/epymarl/src
 # git pull
-python run_ibex.py 53fib3qa -o
+python run_ibex.py ofx576a7 -o

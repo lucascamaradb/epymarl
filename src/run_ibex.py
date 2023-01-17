@@ -98,7 +98,7 @@ if __name__ == "__main__":
     try:
         args = parser.parse_args()
     except:
-        args = parser.parse_args(["53fib3qa", "-o"])
+        args = parser.parse_args(["ofx576a7", "-o"])
 
     sweep_id = wandb_root + args.wandb_sweep
     online = args.online
