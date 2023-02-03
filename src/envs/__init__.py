@@ -44,6 +44,13 @@ class TimeLimit(GymTimeLimit):
             done = len(observation) * [True]
         return observation, reward, done, info
 
+    @property
+    def state_space(self):
+        return self.env.state_space
+
+    def state(self):
+        return self.env.state()
+
 
 class FlattenObservation(ObservationWrapper):
     r"""Observation wrapper that flattens the observation of individual agents."""
@@ -73,6 +80,21 @@ class FlattenObservation(ObservationWrapper):
                 for obs_space, obs in zip(self.env.observation_space, observation)
             ]
         )
+
+    @property
+    def state_space(self):
+        flatdim = spaces.flatdim(self.env.state_space)
+        space = spaces.Box(
+                    low=-float("inf"),
+                    high=float("inf"),
+                    shape=(flatdim,),
+                    dtype=np.float32,
+                )
+        return space
+
+    def state(self):
+        state = self.env.state()
+        return spaces.flatten(self.state_space, state)
 
 
 class _GymmaWrapper(MultiAgentEnv):
@@ -124,11 +146,22 @@ class _GymmaWrapper(MultiAgentEnv):
         return flatdim(self.longest_observation_space)
 
     def get_state(self):
-        return np.concatenate(self._obs, axis=0).astype(np.float32)
+        # Check if the environment provides a state
+        state = self._env.state() ###########################################
+        return state
+        try:
+            state = self._env.state()
+            return state
+        except:
+            return np.concatenate(self._obs, axis=0).astype(np.float32)
 
     def get_state_size(self):
         """ Returns the shape of the state"""
-        return self.n_agents * flatdim(self.longest_observation_space)
+        return flatdim(self._env.state_space) ###########################################
+        try:
+            return flatdim(self._env.state_space)
+        except:
+            return self.n_agents * flatdim(self.longest_observation_space)
 
     def get_obs_agent(self, agent_id):
         """ Returns observation for agent_id """
@@ -137,13 +170,6 @@ class _GymmaWrapper(MultiAgentEnv):
     def get_obs_size(self):
         """ Returns the shape of the observation """
         return flatdim(self.longest_observation_space)
-
-    def get_state(self):
-        return np.concatenate(self._obs, axis=0).astype(np.float32)
-
-    def get_state_size(self):
-        """ Returns the shape of the state"""
-        return self.n_agents * flatdim(self.longest_observation_space)
 
     def get_avail_actions(self):
         avail_actions = []

@@ -57,6 +57,8 @@ class CentralVCritic(nn.Module):
     def _get_input_shape(self, scheme):
         # state
         input_shape = scheme["state"]["vshape"]
+        # return input_shape
+        ######################################################################################
         # observations
         if self.args.obs_individual_obs:
             input_shape += scheme["obs"]["vshape"] * self.n_agents
