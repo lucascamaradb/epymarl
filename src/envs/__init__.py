@@ -220,3 +220,7 @@ class _GymmaWrapper(MultiAgentEnv):
 
 
 REGISTRY["gymma"] = partial(env_fn, env=_GymmaWrapper)
+
+###########################################
+from .gridworld_env import GridworldWrapper
+REGISTRY["gridworld"] = partial(env_fn, env=GridworldWrapper)

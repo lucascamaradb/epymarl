@@ -8,8 +8,8 @@ class BasicMAC:
     def __init__(self, scheme, groups, args):
         self.n_agents = args.n_agents
         self.args = args
-        input_shape = self._get_input_shape(scheme)
-        self._build_agents(input_shape)
+        self.input_shape = self._get_input_shape(scheme)
+        self._build_agents(self.input_shape)
         self.agent_output_type = args.agent_output_type
 
         self.action_selector = action_REGISTRY[args.action_selector](args)
@@ -60,22 +60,29 @@ class BasicMAC:
     def _build_agents(self, input_shape):
         self.agent = agent_REGISTRY[self.args.agent](input_shape, self.args)
 
-    def _build_inputs(self, batch, t):
-        # Assumes homogenous agents with flat observations.
-        # Other MACs might want to e.g. delegate building inputs to each agent
-        bs = batch.batch_size
-        inputs = []
-        inputs.append(batch["obs"][:, t])  # b1av
-        if self.args.obs_last_action:
-            if t == 0:
-                inputs.append(th.zeros_like(batch["actions_onehot"][:, t]))
-            else:
-                inputs.append(batch["actions_onehot"][:, t-1])
-        if self.args.obs_agent_id:
-            inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
+    # def _build_inputs(self, batch, t):
+    #     # Assumes homogenous agents
+    #     # Other MACs might want to e.g. delegate building inputs to each agent
+    #     bs = batch.batch_size
+    #     inputs = []
+    #     inputs.append(batch["obs"][:, t])  # b1av
+    #     if self.args.obs_last_action:
+    #         if t == 0:
+    #             inputs.append(th.zeros_like(batch["actions_onehot"][:, t]))
+    #         else:
+    #             inputs.append(batch["actions_onehot"][:, t-1])
+    #     if self.args.obs_agent_id:
+    #         inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
 
-        inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
-        return inputs
+    #     # inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
+    #     inputs = th.cat([x.reshape(bs*self.n_agents, *self.input_shape) for x in inputs], dim=1)
+    #     return inputs
+
+    def _build_inputs(self, batch, t):
+        assert not self.args.obs_last_action, "obs_last_action not supported for non-flat observations"
+        assert not self.args.obs_agent_id, "obs_agent_id not supported for non-flat observations"
+
+        return batch["obs"][:, t][0]
 
     def _get_input_shape(self, scheme):
         input_shape = scheme["obs"]["vshape"]

@@ -1,0 +1,111 @@
+from smac.env import MultiAgentEnv
+import gym
+import numpy as np
+from gym.wrappers import TimeLimit as GymTimeLimit
+
+class TimeLimit(GymTimeLimit):
+    @property
+    def state_space(self):
+        return self.env.state_space
+
+    def state(self):
+        return self.env.state()
+    
+
+class GridworldWrapper(MultiAgentEnv):
+    def __init__(self, key, time_limit, pretrained_wrapper, **kwargs):
+        self.episode_limit = time_limit
+        self._env = TimeLimit(gym.make(f"{key}"), max_episode_steps=time_limit)
+        # self._env = FlattenObservation(self._env)
+
+        if pretrained_wrapper:
+            raise NotImplementedError("Pretrained wrapper with Gridworld")
+
+        self.n_agents = self._env.n_agents
+        self._obs = None
+
+        self.ind_action_space = self._env.action_space[0] # assume homogeneous agents
+        self.ind_observation_space = self._env.observation_space[0] # assume homogeneous agents
+
+        self._seed = kwargs["seed"]
+        self._env.seed(self._seed)
+
+    def step(self, actions):
+        """ Returns reward, terminated, info """
+        actions = [int(a) for a in actions]
+        self._obs, reward, done, info = self._env.step(actions)
+        self._obs = [self._channels_first(x) for x in self._obs]
+        return float(sum(reward)), done, {}
+
+
+    def get_obs(self):
+        """ Returns all agent observations in a list """
+        return self._obs
+
+    def get_obs_agent(self, agent_id):
+        """ Returns observation for agent_id """
+        # raise self._obs[agent_id] # raise?
+        return self._obs[agent_id]
+
+    def get_obs_size(self):
+        """ Returns the shape of the observation """
+        return self._channels_first(self.ind_observation_space.shape)
+
+    def get_state(self):
+        return self._channels_first(self._env.state())
+
+    def get_state_size(self):
+        """ Returns the shape of the state"""
+        return self._channels_first(self._env.state_space.shape)
+
+    def get_avail_actions(self):
+        avail_actions = []
+        for agent_id in range(self.n_agents):
+            avail_agent = self.get_avail_agent_actions(agent_id)
+            avail_actions.append(avail_agent)
+        return avail_actions
+
+    def get_avail_agent_actions(self, agent_id):
+        """ Returns the available actions for agent_id """
+
+        # For now, assume all actions are always valid
+        return self.ind_action_space.n * [1]
+
+        # valid = flatdim(self._env.action_space[agent_id]) * [1]
+        # invalid = [0] * (self.longest_action_space.n - len(valid))
+        # return valid + invalid
+
+    def get_total_actions(self):
+        """ Returns the total number of actions an agent could ever take """
+        return self.ind_action_space.n
+
+    def reset(self):
+        """ Returns initial observations and states"""
+        self._obs = self._env.reset()
+        self._obs = [self._channels_first(x) for x in self._obs]
+        return self.get_obs(), self.get_state()
+
+    def render(self):
+        self._env.render()
+
+    def close(self):
+        self._env.close()
+
+    def seed(self):
+        return self._env.seed
+
+    def save_replay(self):
+        pass
+
+    def get_stats(self):
+        return {}
+
+    def _channels_first(self, obs):
+        if isinstance(obs, np.ndarray):
+            assert len(obs.shape)==3, "Expected 3D tensor: WxHxC"
+            return np.transpose(obs, [2,0,1])
+        elif isinstance(obs, tuple):
+            assert len(obs)==3, "Expected 3D shape: WxHxC"
+            return (obs[2], obs[0], obs[1])
+        else:
+            raise TypeError("Unexpected type")
