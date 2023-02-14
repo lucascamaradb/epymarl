@@ -16,6 +16,7 @@ class CNNAgent(CustomAgent):
     def __init__(self, input_shape, args):
         super().__init__(input_shape, args)
 
+        self.device = torch.device(args.device)
         self.in_shape = input_shape
         self.in_channels = input_shape[0]
         out_channels = 1 ###########
@@ -31,14 +32,11 @@ class CNNAgent(CustomAgent):
             nn.Conv2d(16, 32, 3, 1, 0),
             nn.AvgPool2d(3,stride=1),
             nn.Conv2d(32, 1, 1, padding="same"),
-        )
+        ).to(self.device)
         self.out_shape = self._get_output_shape()
 
         self.dist_given_act = self.dist_grid(self.out_shape[-1], gamma=.5)
-        self.multiplier_act = torch.cat([x.unsqueeze(0) for x in self.dist_given_act.values()],0)
-
-        # Generate grid2action multipliers
-        # dist_grid = 0
+        self.multiplier_act = torch.cat([x.unsqueeze(0) for x in self.dist_given_act.values()],0).to(self.device)
 
     def forward(self, input, hidden_state=None):
         # if len(input.shape)==3:
@@ -51,14 +49,14 @@ class CNNAgent(CustomAgent):
         act_prob = self.grid_to_act(v)
         # act = torch.argmax(act_prob)
         
-        return act_prob, torch.Tensor([1]) # returns hidden state
+        return act_prob, torch.Tensor([0]) # returns hidden state
         # raise NotImplementedError("Custom agent not implemented")
 
     def init_hidden(self):
         return torch.Tensor([1])
 
     def _get_output_shape(self):
-        v = torch.randn(self.in_shape).unsqueeze(0)
+        v = torch.randn(self.in_shape).unsqueeze(0).to(self.device)
         return self.net(v)[0].shape
 
         # v = torch.randn(self.in_shape)

@@ -11,6 +11,7 @@ class CNNCentralVCritic(nn.Module):
         assert not args.obs_last_action, "obs_last_action not supported in CNN critic"
 
         self.args = args
+        self.device = th.device(args.device)
         self.n_actions = args.n_actions
         self.n_agents = args.n_agents
 
@@ -26,7 +27,7 @@ class CNNCentralVCritic(nn.Module):
             nn.Conv2d(16, 32, 5, 1, 0),
             # nn.AvgPool2d(5,stride=1), # 5 instead of 3
             nn.Conv2d(32, 1, 1),
-        )
+        ).to(self.device)
 
     def forward(self, batch, t=None):
         inputs, bs, max_t = self._build_inputs(batch, t=t)
@@ -34,6 +35,7 @@ class CNNCentralVCritic(nn.Module):
         # x = F.relu(self.fc2(x))
         # q = self.fc3(x)
         # return q
+        inputs = inputs.to(self.device)
         inputs -= .5 ##########################
         assert not th.isnan(inputs).any(), "NaN in input"
         orig_shape = inputs.shape[:-3]
