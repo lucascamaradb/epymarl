@@ -17,4 +17,5 @@ REGISTRY["maddpg_critic_ns"] = MADDPGCriticNS
 REGISTRY["ac_critic"] = ACCritic
 REGISTRY["ac_critic_ns"] = ACCriticNS
 
-
+from .cnn_centralV import CNNCentralVCritic
+REGISTRY["cnn_cv_critic"] = CNNCentralVCritic

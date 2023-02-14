@@ -39,7 +39,8 @@ def config2txt(config):
 DEFAULT_CONFIG = {
     "buffer_size": 10,
     # "config": "vdn",
-    "config": "mappo",
+    "config": "mappo", 
+    "critic_type": "cnn_cv_critic",
     "env_config": "gridworld", "agent": "cnn",
     # "env_config": "gymma",
     "hidden_dim": 512,

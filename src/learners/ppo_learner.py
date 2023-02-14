@@ -97,6 +97,8 @@ class PPOLearner:
 
             entropy = -th.sum(pi * th.log(pi + 1e-10), dim=-1)
             pg_loss = -((th.min(surr1, surr2) + self.args.entropy_coef * entropy) * mask).sum() / mask.sum()
+            if th.isnan(pg_loss).any():
+                raise ValueError("NaN in loss")
 
             # Optimise agents
             self.agent_optimiser.zero_grad()

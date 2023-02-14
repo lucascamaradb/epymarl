@@ -34,7 +34,10 @@ class BasicMAC:
             if getattr(self.args, "mask_before_softmax", True):
                 # Make the logits for unavailable actions very negative to minimise their affect on the softmax
                 reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size * self.n_agents, -1)
-                agent_outs[reshaped_avail_actions == 0] = -1e10
+                try:
+                    agent_outs[reshaped_avail_actions == 0] = -1e10
+                except:
+                    raise ValueError()
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
 
         return agent_outs.view(ep_batch.batch_size, self.n_agents, -1)
@@ -74,15 +77,20 @@ class BasicMAC:
     #     if self.args.obs_agent_id:
     #         inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
 
-    #     # inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
-    #     inputs = th.cat([x.reshape(bs*self.n_agents, *self.input_shape) for x in inputs], dim=1)
+    #     inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
+    #     # inputs = th.cat([x.reshape(bs*self.n_agents, *self.input_shape) for x in inputs], dim=1)
     #     return inputs
 
     def _build_inputs(self, batch, t):
         assert not self.args.obs_last_action, "obs_last_action not supported for non-flat observations"
         assert not self.args.obs_agent_id, "obs_agent_id not supported for non-flat observations"
 
-        return batch["obs"][:, t][0]
+        bs = batch.batch_size
+        if isinstance(self.input_shape, tuple):
+            inputs = batch["obs"][:, t].reshape(bs*self.n_agents, *self.input_shape)
+        else:
+            inputs = batch["obs"][:, t].reshape(bs*self.n_agents, self.input_shape)
+        return inputs
 
     def _get_input_shape(self, scheme):
         input_shape = scheme["obs"]["vshape"]
