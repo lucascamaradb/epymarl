@@ -6,6 +6,7 @@ import argparse
 import threading
 import robot_gym
 
+import gym
 from gym.envs.registration import register
 
 IBEX = True if os.path.exists("/ibex/scratch/camaral/") else False
@@ -24,13 +25,17 @@ parser = argparse.ArgumentParser(description="Gridworld Training Script")
 
 def config2txt(config):
     discard_start_with = "robot_gym"
-    keys_to_discard = ["config", "env_config", "save_model", "save_path"]
+    keys_to_discard = ["config", "env_config", "save_model", "save_path", "strategy"]
+    requires_quotes = ["critic_arch", "agent_arch"]
 
     comb = []
     for k, v in config.items():
-        if k.startswith(discard_start_with) or any([k==kd for kd in keys_to_discard]):
+        if k.startswith(discard_start_with) or k in keys_to_discard:
             continue
-        comb.append(f"{k}={v}")
+        if k in requires_quotes:
+            comb.append(f'{k}="{v}"')
+        else:
+            comb.append(f"{k}={v}")
     if comb==[]:
         return ""
     txt = " ".join(comb)
@@ -42,6 +47,8 @@ DEFAULT_CONFIG = {
     "config": "mappo", 
     "critic_type": "cnn_cv_critic",
     "env_config": "gridworld", "agent": "cnn",
+    "critic_arch": "conv2d,10,3,1,0;relu&batchNorm1d;linear,50;relu",
+    "strategy": "hardcoded",
     # "env_config": "gymma",
     "hidden_dim": 512,
     "obs_agent_id": False,
@@ -54,8 +61,34 @@ DEFAULT_CONFIG = {
     "robot_gym.size": 40,
     "robot_gym.view_range": 4,
     "seed": 10,
-    "t_max": 600000,
+    "t_max": 600_000,
 }
+
+def run_hardcoded(env, config):
+    rwd_lst = []
+    try:
+        for j in range(100):
+            obs = env.reset()
+            tot_rwd = 0
+            for k in range(100):
+                actions = tuple([ env.map.robots[i].get_action(obs[i]) for i in range(env.n_agents) ])
+                # print(actions)
+                # print([env.map.robots[0].sep_act(a) for a in actions])
+                obs, rwd, done, _ = env.step(actions)
+                # env.render()
+                tot_rwd += sum(rwd)
+
+            print(f"TOTAL REWARD: {tot_rwd}")
+            rwd_lst.append(tot_rwd)
+        print(f"AVERAGE REWARD: {np.mean(rwd_lst)}")
+        print(f"STD DEV: {np.std(rwd_lst)}")
+        results = {}
+        results["avg"] = np.mean(rwd_lst)
+        results["std"] = np.std(rwd_lst)
+        return results
+
+    except KeyboardInterrupt:
+        env.close()
 
 
 def train(config=None, default=False):
@@ -74,23 +107,29 @@ def train(config=None, default=False):
         env_key = register_env(run.id, config)
         print(f"Environment: {env_key}")
 
+        if config["strategy"]=="hardcoded":
+            results_dict = run_hardcoded(gym.make(env_key), config)
 
-        # Define save path
-        save_path = scratch_dir + run.id + "/"
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
+            run.summary["best_test_return_mean"] = results_dict["avg"]
+            run.summary["return_mean"] = results_dict["avg"]
+            run.summary["return_std"] = results_dict["std"]
+        else:
+            # Define save path
+            save_path = scratch_dir + run.id + "/"
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
 
-        # Define script to call
-        n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 52
-        txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-        # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-        if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
-        # if True: txt_args += f" runner=\"parallel\" batch_size_run={n_parallel}"
-        # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-        print("python3 " + txt_args)
+            # Define script to call
+            n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 52
+            txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
+            # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
+            if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
+            # if True: txt_args += f" runner=\"parallel\" batch_size_run={n_parallel}"
+            # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
+            print("python3 " + txt_args)
 
-        # # Run EPyMARL training script
-        main.main_from_arg(txt_args.split(' '))
+            # # Run EPyMARL training script
+            main.main_from_arg(txt_args.split(' '))
 
 def register_env(id,config):
     env_id = f"GridWorld-Custom-{id}-v0"
@@ -122,10 +161,11 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["ofx576a7"])
-        default_config = True
+        args = parser.parse_args(["gridworld_cnn_vs_mlp/q16v7456"])
+        default_config = False
 
-    sweep_id = wandb_root + args.wandb_sweep
+    # sweep_id = wandb_root + args.wandb_sweep
+    sweep_id = args.wandb_sweep
     online = args.online
     wandb.agent(sweep_id, lambda *args, **kw: train(default=default_config,*args, **kw))
     # wandb.agent(sweep_id, train, count=1)

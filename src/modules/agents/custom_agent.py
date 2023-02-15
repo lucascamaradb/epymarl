@@ -1,3 +1,5 @@
+from utils.nn_utils import net_from_string
+
 import torch
 import torch.nn as nn
 
@@ -22,18 +24,16 @@ class CNNAgent(CustomAgent):
         out_channels = 1 ###########
         kernel_size = 1 ###########
 
-        # batch_norm = nn.BatchNorm2d(self.in_channels)
-        # self.c1 = nn.Conv2d(self.in_channels, 3, 3, padding="same")
-        # self.c2 = nn.Conv2d(3, 1, 5, padding="same")
-        self.net = nn.Sequential(
-            nn.Conv2d(self.in_channels, 16, 3, 1, 0),
-            nn.BatchNorm2d(16),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(16, 32, 3, 1, 0),
-            nn.AvgPool2d(3,stride=1),
-            nn.Conv2d(32, 1, 1, padding="same"),
-        ).to(self.device)
-        self.out_shape = self._get_output_shape()
+        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, target_shape=(9,))
+        self.net = self.net.to(self.device)
+        # self.net = nn.Sequential(
+        #     nn.Conv2d(self.in_channels, 16, 3, 1, 0),
+        #     nn.BatchNorm2d(16),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(16, 32, 3, 1, 0),
+        #     nn.AvgPool2d(3,stride=1),
+        #     nn.Conv2d(32, 1, 1, padding="same"),
+        # ).to(self.device)
 
         self.dist_given_act = self.dist_grid(self.out_shape[-1], gamma=.5)
         self.multiplier_act = torch.cat([x.unsqueeze(0) for x in self.dist_given_act.values()],0).to(self.device)
@@ -46,14 +46,15 @@ class CNNAgent(CustomAgent):
             raise ValueError("Not enough dimensions in input")
 
         v = self.net(input)
+        return v, torch.Tensor([0])
+
         act_prob = self.grid_to_act(v)
         # act = torch.argmax(act_prob)
-        
         return act_prob, torch.Tensor([0]) # returns hidden state
         # raise NotImplementedError("Custom agent not implemented")
 
     def init_hidden(self):
-        return torch.Tensor([1])
+        return torch.Tensor([0])
 
     def _get_output_shape(self):
         v = torch.randn(self.in_shape).unsqueeze(0).to(self.device)

@@ -2,6 +2,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.nn_utils import net_from_string
 
 class CNNCentralVCritic(nn.Module):
     def __init__(self, scheme, args):
@@ -20,14 +21,17 @@ class CNNCentralVCritic(nn.Module):
         self.output_type = "v"
 
         # Set up network layers
-        self.net = nn.Sequential(
-            nn.Conv2d(self.in_channels, 16, 3, 1, 0),
-            # nn.BatchNorm2d(16),
-            nn.ReLU(),
-            nn.Conv2d(16, 32, 5, 1, 0),
-            # nn.AvgPool2d(5,stride=1), # 5 instead of 3
-            nn.Conv2d(32, 1, 1),
-        ).to(self.device)
+        # net_string = f"conv2d,16,3,1,0 relu conv2d,32,5,1,0 relu conv2d,1,1 & "
+        self.net, self.output_shape = net_from_string(args.critic_arch, self.input_shape, target_shape=(1,))
+        self.net = self.net.to(self.device)
+        # self.net = nn.Sequential(
+        #     nn.Conv2d(self.in_channels, 16, 3, 1, 0),
+        #     # nn.BatchNorm2d(16),
+        #     nn.ReLU(),
+        #     nn.Conv2d(16, 32, 5, 1, 0),
+        #     # nn.AvgPool2d(5,stride=1), # 5 instead of 3
+        #     nn.Conv2d(32, 1, 1),
+        # ).to(self.device)
 
     def forward(self, batch, t=None):
         inputs, bs, max_t = self._build_inputs(batch, t=t)
@@ -41,12 +45,20 @@ class CNNCentralVCritic(nn.Module):
         orig_shape = inputs.shape[:-3]
         if len(inputs.shape)>4:
             inputs = inputs.view(-1,*self.input_shape)
-            out = th.sum(self.net(inputs), (-1,-2,-3))
+            if len(self.output_shape)==3:
+                out = th.sum(self.net(inputs), (-1,-2,-3))
+            elif len(self.output_shape)==1:
+                out = th.sum(self.net(inputs), (-1,))
             out = out.view(*orig_shape, 1)
         elif len(inputs.shape)<3:
             raise ValueError(f"Unexpected input dimension: {inputs.shape}")
         else:
-            out = th.sum(self.net(inputs), (-1,-2,-3))
+            if len(self.output_shape)==3:
+                out = th.sum(self.net(inputs), (-1,-2,-3))
+            elif len(self.output_shape)==1:
+                out = th.sum(self.net(inputs), (-1,))
+            else:
+                raise ValueError("Weird output shape from network")
         
         # Sanity check
         if th.isnan(out).any():

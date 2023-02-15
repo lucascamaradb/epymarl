@@ -50,9 +50,6 @@ label: "default_label"
 hypergroup: null
 
 # NEW PARAMETERS
-critic_arch: 
-  cnn_arch: ["flatten"]
-  mlp_arch: [64, 64]
-agent_arch:
-  cnn_arch: ["flatten"]
-  mlp_arch: [64, 64]
+critic_arch: "conv2d,10,3,1,0;relu;conv2d,10,5,1,0;relu&batchNorm1d;linear,50;relu"
+# critic_arch: "conv2d,10,3,1,0 relu conv2d,10,5,1,0 relu & "
+agent_arch: "conv2d,5,5,1,0;relu&batchNorm1d;linear,25;relu"

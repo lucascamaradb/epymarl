@@ -166,6 +166,9 @@ class PPOLearner:
         running_log["q_taken_mean"].append((v * mask).sum().item() / mask_elems)
         running_log["target_mean"].append((target_returns * mask).sum().item() / mask_elems)
 
+        if th.isnan(masked_td_error).any():
+            raise ValueError("NaN in TD error")
+
         return masked_td_error, running_log
 
     def nstep_returns(self, rewards, mask, values, nsteps):
