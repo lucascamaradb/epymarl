@@ -9,12 +9,13 @@
 #SBATCH --mail-user=lucas.camaradantasbezerra@kaust.edu.sa
 #SBATCH --mail-type=ALL
 #SBATCH --time=24:00:00
-#SBATCH --mem=64G
-#SBATCH --gres=gpu:1
-#SBATCH --constraint=[gpu]
+#SBATCH --mem=100G
+#SBATCH --gres=gpu:p6000:2
+
 
 # conda init bash
 # conda activate epymarl
 cd /home/camaral/code/epymarl/src
 # git pull
-python run_ibex.py ofx576a7 -o
+# python run_ibex.py ofx576a7 -o
+python run_ibex.py
