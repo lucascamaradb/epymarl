@@ -139,7 +139,7 @@ class PPOLearner:
         target_returns = self.nstep_returns(rewards, mask, target_vals, self.args.q_nstep)
         if self.args.standardise_returns:
             self.ret_ms.update(target_returns)
-            target_returns = (target_returns - self.ret_ms.mean) / th.sqrt(self.ret_ms.var)
+            target_returns = (target_returns - self.ret_ms.mean) / (th.sqrt(self.ret_ms.var)+1e-5)
 
         running_log = {
             "critic_loss": [],

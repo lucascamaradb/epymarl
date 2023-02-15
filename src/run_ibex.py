@@ -52,7 +52,7 @@ DEFAULT_CONFIG = {
     "robot_gym.N_obj": [4, 3, 3],
     "robot_gym.comm_range": 4,
     "robot_gym.size": 40,
-    "robot_gym.view_range": 2,
+    "robot_gym.view_range": 4,
     "seed": 10,
     "t_max": 600000,
 }
