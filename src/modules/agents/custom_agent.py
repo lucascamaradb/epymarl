@@ -24,19 +24,11 @@ class CNNAgent(CustomAgent):
         out_channels = 1 ###########
         kernel_size = 1 ###########
 
-        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, target_shape=(9,))
+        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, target_shape=(args.n_actions,))
         self.net = self.net.to(self.device)
-        # self.net = nn.Sequential(
-        #     nn.Conv2d(self.in_channels, 16, 3, 1, 0),
-        #     nn.BatchNorm2d(16),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv2d(16, 32, 3, 1, 0),
-        #     nn.AvgPool2d(3,stride=1),
-        #     nn.Conv2d(32, 1, 1, padding="same"),
-        # ).to(self.device)
 
-        self.dist_given_act = self.dist_grid(self.out_shape[-1], gamma=.5)
-        self.multiplier_act = torch.cat([x.unsqueeze(0) for x in self.dist_given_act.values()],0).to(self.device)
+        # self.dist_given_act = self.dist_grid(self.out_shape[-1], gamma=.5)
+        # self.multiplier_act = torch.cat([x.unsqueeze(0) for x in self.dist_given_act.values()],0).to(self.device)
 
     def forward(self, input, hidden_state=None):
         # if len(input.shape)==3:
@@ -110,8 +102,8 @@ if __name__=="__main__":
     v = torch.rand(ag.in_shape)
     act = ag.forward(v)
 
-    for k,v in dist_given_act.items():
-        print(k)
-        xy_print(v)
-        print("")
+    # for k,v in dist_given_act.items():
+    #     print(k)
+    #     xy_print(v)
+    #     print("")
 

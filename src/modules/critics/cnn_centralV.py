@@ -24,14 +24,6 @@ class CNNCentralVCritic(nn.Module):
         # net_string = f"conv2d,16,3,1,0 relu conv2d,32,5,1,0 relu conv2d,1,1 & "
         self.net, self.output_shape = net_from_string(args.critic_arch, self.input_shape, target_shape=(1,))
         self.net = self.net.to(self.device)
-        # self.net = nn.Sequential(
-        #     nn.Conv2d(self.in_channels, 16, 3, 1, 0),
-        #     # nn.BatchNorm2d(16),
-        #     nn.ReLU(),
-        #     nn.Conv2d(16, 32, 5, 1, 0),
-        #     # nn.AvgPool2d(5,stride=1), # 5 instead of 3
-        #     nn.Conv2d(32, 1, 1),
-        # ).to(self.device)
 
     def forward(self, batch, t=None):
         inputs, bs, max_t = self._build_inputs(batch, t=t)

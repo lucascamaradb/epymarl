@@ -48,14 +48,15 @@ DEFAULT_CONFIG = {
     "critic_type": "cnn_cv_critic",
     "env_config": "gridworld", "agent": "cnn",
     "critic_arch": "conv2d,10,3,1,0;relu&batchNorm1d;linear,50;relu",
-    "strategy": "hardcoded",
+    "strategy": "cnn",
     # "env_config": "gymma",
     "hidden_dim": 512,
     "obs_agent_id": False,
     "robot_gym.Lsec": 2,
     "robot_gym.N_agents": 10,
-    # "robot_gym.N_comm": 2,
-    "robot_gym.N_comm": 0,
+    "robot_gym.N_comm": 2,
+    "robot_gym.hardcoded_comm": True,
+    # "robot_gym.N_comm": 0,
     "robot_gym.N_obj": [4, 3, 3],
     "robot_gym.comm_range": 4,
     "robot_gym.size": 40,
@@ -139,6 +140,7 @@ def register_env(id,config):
             "n_obj": config["robot_gym.N_obj"],
             "render": False,
             "comm": config["robot_gym.N_comm"],
+            "hardcoded_comm": config["robot_gym.hardcoded_comm"],
             "view_range": config["robot_gym.view_range"],
             "comm_range": config["robot_gym.comm_range"],
             "Lsec": config["robot_gym.Lsec"],
@@ -161,8 +163,8 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_cnn_vs_mlp/q16v7456"])
-        default_config = False
+        args = parser.parse_args(["gridworld_cnn_vs_mlp/q16v7456"]) # cnn
+        default_config = True
 
     # sweep_id = wandb_root + args.wandb_sweep
     sweep_id = args.wandb_sweep
