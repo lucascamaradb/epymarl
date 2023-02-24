@@ -8,9 +8,10 @@
 #SBATCH -e /ibex/scratch/camaral/runs/RobotSweep.%J.err
 #SBATCH --mail-user=lucas.camaradantasbezerra@kaust.edu.sa
 #SBATCH --mail-type=ALL
-#SBATCH --time=24:00:00
+#SBATCH --time=96:00:00
 #SBATCH --mem=100G
-#SBATCH --gres=gpu:p6000:2
+#SBATCH --gpus-per-node=1
+#SBATCH --constraint="[p6000|p100|v100]"
 
 
 # conda init bash
@@ -18,4 +19,4 @@
 cd /home/camaral/code/epymarl/src
 # git pull
 # python run_ibex.py ofx576a7 -o
-python run_ibex.py gridworld_cnn_vs_mlp/07yyypfu -o
+python run_ibex.py gridworld_cnn_vs_mlp/o7rkodbp -o
