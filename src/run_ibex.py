@@ -48,7 +48,8 @@ DEFAULT_CONFIG = {
     "critic_type": "cnn_cv_critic",
     "env_config": "gridworld", "agent": "cnn",
     "critic_arch": "conv2d,10,3,1,0;relu&batchNorm1d;linear,50;relu",
-    "strategy": "cnn",
+    # "strategy": "cnn",
+    "strategy": "hardcoded",
     # "env_config": "gymma",
     "hidden_dim": 512,
     "obs_agent_id": False,
@@ -96,7 +97,10 @@ def train(config=None, default=False):
     mode = "online" if online else "offline"
     with wandb.init(config=config, mode=mode) as run:
         config = DEFAULT_CONFIG if default else wandb.config
-        np.random.seed(config["seed"])
+        try:
+            np.random.seed(config["seed"])
+        except:
+            pass
         if IBEX: run.summary["ibex_job_id"] = os.environ["SLURM_JOBID"]
 
         # Save path
@@ -163,8 +167,9 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_cnn_vs_mlp/q16v7456"]) # cnn
-        default_config = True
+        # args = parser.parse_args(["gridworld_cnn_vs_mlp/q16v7456"]) # cnn
+        args = parser.parse_args(["gridworld_cnn_vs_mlp/sqwrhes7"]) # hardcoded
+        default_config = False
 
     # sweep_id = wandb_root + args.wandb_sweep
     sweep_id = args.wandb_sweep
