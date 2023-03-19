@@ -134,8 +134,8 @@ def train(config=None, default=False):
             n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 5
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-            # if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}" ########################
-            if True: txt_args += f" runner=\"episode\" batch_size_run={1}"
+            if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}" ########################
+            # if True: txt_args += f" runner=\"episode\" batch_size_run={1}"
             # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             print("python3 " + txt_args)
 
