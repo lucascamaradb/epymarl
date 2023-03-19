@@ -1,8 +1,32 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from numpy import prod
+try:
+    from . import resnet
+except:
+    import resnet
+    
+
+class Interpolate(nn.Module):
+    def __init__(self, scale_factor, mode="bilinear"):
+        super(Interpolate, self).__init__()
+        self.interp = nn.functional.interpolate
+        # self.size = size
+        self.scale_factor = scale_factor
+        self.mode = mode
+        
+    def forward(self, x):
+        x = self.interp(x, scale_factor=self.scale_factor, mode=self.mode, align_corners=False)
+        return x
+
 
 net_config = {
+    "resnet": {
+        "class": resnet.resnet18,
+        "kwargs": ["num_input_channels"],
+        "inferFirst": True,
+        },
     "conv2d": {
         "class": nn.Conv2d,
         "kwargs": ["in_channels", "out_channels", "kernel_size", "stride", "padding"],
@@ -35,6 +59,10 @@ net_config = {
         "class": lambda: nn.Flatten(start_dim=-3), 
         "kwargs": [],
         },
+    "interpolate": {
+        "class": Interpolate, 
+        "kwargs": ["scale_factor"],
+        },
 }
 
 def layer_from_string(layer_str, input_shape):
@@ -44,13 +72,13 @@ def layer_from_string(layer_str, input_shape):
 
     kwargs = {}
     if net_config[layer_type].get("inferFirst", False):
-        values = [input_shape[0]]
+        values = [str(input_shape[0])]
     else:
         values = []
     if len(args)>1:
         values = values + args[1:]
     for i in range(len(values)):
-        kwargs[net_config[layer_type]["kwargs"][i]] = int(values[i])
+        kwargs[net_config[layer_type]["kwargs"][i]] = eval(values[i])
 
     layer = net_config[layer_type]["class"](**kwargs)
     
@@ -59,6 +87,9 @@ def layer_from_string(layer_str, input_shape):
         output_shape = input_shape
     elif layer_type=="flatten":
         output_shape = (prod(input_shape),)
+    elif layer_type in ["resnet","interpolate"]:
+        x = x.unsqueeze(0)
+        output_shape = layer(x).shape[1:]
     else:
         output_shape = layer(x).shape
 
@@ -70,6 +101,12 @@ def net_from_string(string, input_shape, target_shape=None):
     strs = string.split("&")
     assert len(strs)==2, f"Expected CNN and MLP strings, separated by '&', but got: {string}"
     cnn_str, mlp_str = strs
+
+    if target_shape=="same":
+        # Output shape should be the same as the input, but with 1 channel only
+        # Ensure there are no linear layers
+        assert len(mlp_str)==0, f"Specified target_shape as grid, but architecture has linear layers. str='{string}'"
+        target_shape = (1, *input_shape[1:])
 
     # Create CNN
     cnn_str = cnn_str.split(";")
@@ -85,8 +122,14 @@ def net_from_string(string, input_shape, target_shape=None):
     if mlp_str==[""]: mlp_str=[]
 
     if target_shape is not None:
-        assert len(target_shape)==1, "Target shape should be the output of a linear layer"
-        mlp_str += [f"linear,{target_shape[0]},0"]
+        if len(target_shape)>1:
+            assert output_shape==target_shape, "Output shape must be equal to input shape"
+            # Add interpolation layer, if necessary
+            
+            if 1: pass
+        else:
+            assert len(target_shape)==1, "Target shape should be the output of a linear layer"
+            mlp_str += [f"linear,{target_shape[0]},0"]
     
     if len(mlp_str)==0:
         return nn.Sequential(*layers), output_shape
@@ -120,12 +163,15 @@ if __name__=="__main__":
     # default_str = "conv2d,16,3,1,0 conv2d,9,3,1,0 batchNorm2d relu & linear,50 relu linear,25 relu"
     # default_str = " & linear,50 relu linear,25 relu"
     # default_str = "conv2d,16,3,1,0 relu conv2d,32,5,1,0 relu conv2d,1,1 & "
-    default_str = "conv2d,10,3,1,0;relu;conv2d,10,5,1,0;relu;avgPool2d,5,1,0&"
+    # default_str = "conv2d,10,3,1,0;relu;conv2d,10,5,1,0;relu;avgPool2d,5,1,0&"
     # default_str = "conv2d,16,3,1,0 conv2d,9,3,1,0 batchNorm2d relu & "
+    # default_str = "resnet&"
+    default_str = "resnet;conv2d,64,1;relu;interpolate,2;conv2d,1,1;relu;interpolate,1.7&"
 
-    input_shape = (3,12,12)
+    input_shape = (5,17,17)
 
-    net, out = net_from_string(default_str, input_shape=input_shape)#, target_shape=(1,))
+    # net, out = net_from_string(default_str, input_shape=input_shape)
+    net, out = net_from_string(default_str, input_shape=input_shape, target_shape="same")
     # res = net_from_string(default_str, input_shape=(3,9,9))
 
     v = torch.rand(10,*input_shape)

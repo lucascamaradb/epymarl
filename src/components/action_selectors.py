@@ -76,3 +76,6 @@ class SoftPoliciesSelector():
 
 
 REGISTRY["soft_policies"] = SoftPoliciesSelector
+
+if __name__=="__main__":
+    s = SoftPoliciesSelector([])

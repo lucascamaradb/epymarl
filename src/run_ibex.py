@@ -47,21 +47,27 @@ DEFAULT_CONFIG = {
     "config": "mappo", 
     "critic_type": "cnn_cv_critic",
     "env_config": "gridworld", "agent": "cnn",
-    "critic_arch": "conv2d,10,3,1,0;relu&batchNorm1d;linear,50;relu",
-    # "strategy": "cnn",
-    "strategy": "hardcoded",
+    "agent_arch": "resnet;conv2d,64,1;relu;interpolate,2;conv2d,1,1;relu;interpolate,1.7&",
+    "critic_arch": "resnet&batchNorm1d;linear,128;relu;linear,32;relu",
+    "strategy": "cnn",
+    # "strategy": "hardcoded",
     # "env_config": "gymma",
     "hidden_dim": 512,
     "obs_agent_id": False,
     "robot_gym.Lsec": 2,
     "robot_gym.N_agents": 10,
-    "robot_gym.N_comm": 2,
-    "robot_gym.hardcoded_comm": True,
-    # "robot_gym.N_comm": 0,
+    # "robot_gym.N_comm": 2,
+    "robot_gym.hardcoded_comm": False,
+    "robot_gym.N_comm": 0,
     "robot_gym.N_obj": [4, 3, 3],
-    "robot_gym.comm_range": 4,
-    "robot_gym.size": 40,
-    "robot_gym.view_range": 4,
+    "robot_gym.comm_range": 8,
+    # "robot_gym.size": 40,
+    "robot_gym.size": 20,
+    "robot_gym.view_range": 8,
+    "robot_gym.action_grid": True,
+    "action_grid": True,
+    "robot_gym.share_intention": "path",
+    "share_intention": "path",
     "seed": 10,
     "t_max": 600_000,
 }
@@ -125,11 +131,11 @@ def train(config=None, default=False):
                 os.makedirs(save_path)
 
             # Define script to call
-            n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 52
+            n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 5
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-            if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
-            # if True: txt_args += f" runner=\"parallel\" batch_size_run={n_parallel}"
+            # if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}" ########################
+            if True: txt_args += f" runner=\"episode\" batch_size_run={1}"
             # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             print("python3 " + txt_args)
 
@@ -150,6 +156,8 @@ def register_env(id,config):
             "Lsec": config["robot_gym.Lsec"],
             "one_hot_obj_lvl": True,
             "max_obj_lvl": 3,
+            "action_grid": config["robot_gym.action_grid"],
+            "share_intention": config["robot_gym.share_intention"],
         }
     print(kwargs)
 
@@ -168,7 +176,8 @@ if __name__ == "__main__":
         default_config = False
     except:
         # args = parser.parse_args(["gridworld_cnn_vs_mlp/q16v7456"]) # cnn
-        args = parser.parse_args(["gridworld_cnn_vs_mlp/sqwrhes7"]) # hardcoded
+        args = parser.parse_args(["gridworld_cnn_vs_mlp/kmsqfd3i"]) # test sweep
+        # args = parser.parse_args(["gridworld_cnn_vs_mlp/sqwrhes7"]) # hardcoded
         default_config = False
 
     # sweep_id = wandb_root + args.wandb_sweep

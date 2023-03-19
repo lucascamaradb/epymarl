@@ -53,3 +53,5 @@ hypergroup: null
 critic_arch: "conv2d,10,3,1,0;relu;conv2d,10,5,1,0;relu&batchNorm1d;linear,50;relu"
 # critic_arch: "conv2d,10,3,1,0 relu conv2d,10,5,1,0 relu & "
 agent_arch: "conv2d,5,5,1,0;relu&batchNorm1d;linear,25;relu"
+action_grid: False
+share_intention: False

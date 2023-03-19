@@ -21,10 +21,10 @@ class CNNAgent(CustomAgent):
         self.device = torch.device(args.device)
         self.in_shape = input_shape
         self.in_channels = input_shape[0]
-        out_channels = 1 ###########
-        kernel_size = 1 ###########
+        self.intention = None
 
-        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, target_shape=(args.n_actions,))
+        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, 
+                                                   target_shape=(args.n_actions,) if not args.action_grid else "same")
         self.net = self.net.to(self.device)
 
         # self.dist_given_act = self.dist_grid(self.out_shape[-1], gamma=.5)
@@ -38,6 +38,11 @@ class CNNAgent(CustomAgent):
             raise ValueError("Not enough dimensions in input")
 
         v = self.net(input)
+        self.intention = v
+        try:
+            v = torch.flatten(v, start_dim=-3)
+        except:
+            print(v)
         return v, torch.Tensor([0])
 
         act_prob = self.grid_to_act(v)
@@ -95,6 +100,11 @@ def xy_print(g):
         for x in range(g.shape[0]):
             print(g[x,y], end=" ")
         print(" ]")
+
+
+class CurriculumAgent(CNNAgent):
+    pass
+
 
 if __name__=="__main__":
     
