@@ -36,7 +36,7 @@ class GridworldWrapper(MultiAgentEnv):
         self._obs, reward, done, info = self._env.step(actions)
         self._obs = [self._channels_first(x) for x in self._obs]
         if isinstance(done, bool): done = [done]
-        return float(sum(reward)), all(done), {}
+        return float(sum(reward)), all(done), info
 
 
     def get_obs(self):

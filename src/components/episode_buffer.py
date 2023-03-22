@@ -229,6 +229,7 @@ class ReplayBuffer(EpisodeBatch):
             self.insert_episode_batch(ep_batch[buffer_left:, :])
 
     def can_sample(self, batch_size):
+        # print(self.episodes_in_buffer)
         return self.episodes_in_buffer >= batch_size
 
     def sample(self, batch_size):

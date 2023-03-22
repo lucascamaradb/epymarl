@@ -37,6 +37,9 @@ class ParallelRunner:
 
         self.t_env = 0
 
+        self.obs_shape = None
+        self.step_env_info = None
+
         self.train_returns = []
         self.test_returns = []
         self.train_stats = {}
@@ -81,10 +84,14 @@ class ParallelRunner:
             pre_transition_data["avail_actions"].append(data["avail_actions"])
             pre_transition_data["obs"].append(data["obs"])
 
+            self.obs_shape = data["obs"][0].shape[1:]
+
         self.batch.update(pre_transition_data, ts=0)
 
         self.t = 0
         self.env_steps_this_run = 0
+
+        self.step_env_info = None
 
     def run(self, test_mode=False):
         self.reset()
@@ -102,6 +109,8 @@ class ParallelRunner:
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch for each un-terminated env
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, bs=envs_not_terminated, test_mode=test_mode)
+            # Filter actions
+            actions = self.filter_actions_by_robot_position(actions)
             cpu_actions = actions.to("cpu").numpy()
 
             # Update the actions taken
@@ -137,9 +146,15 @@ class ParallelRunner:
             }
 
             # Receive data back for each unterminated env
+            self.step_env_info = [0]*len(self.parent_conns)
             for idx, parent_conn in enumerate(self.parent_conns):
                 if not terminated[idx]:
                     data = parent_conn.recv()
+
+                    # Store robot info
+                    self.step_env_info[idx] = data["info"].copy()
+                    data["info"].pop("robot_info")
+
                     # Remaining data for this current timestep
                     post_transition_data["reward"].append((data["reward"],))
 
@@ -212,6 +227,27 @@ class ParallelRunner:
             if k != "n_episodes":
                 self.logger.log_stat(prefix + k + "_mean" , v/stats["n_episodes"], self.t_env)
         stats.clear()
+
+    def filter_actions_by_robot_position(self, actions):
+        if self.step_env_info is None or self.obs_shape is None:
+            return actions
+        
+        # Convert each robot's stored command to an action
+        shape = self.obs_shape
+        for worker_idx in range(len(self.parent_conns)):
+            env_info = self.step_env_info[worker_idx]
+            for i,e in enumerate(env_info["robot_info"]):
+                pos, cmd = e
+                if cmd is None or cmd==(None, None): continue
+                dif = (cmd[0]-pos[0]+shape[0]//2, cmd[1]-pos[1]+shape[1]//2)
+                try:
+                    act = np.ravel_multi_index(dif, shape)
+                    # assert dif==np.unravel_index(act, shape)
+                    actions[worker_idx][i] = act
+                except:
+                    pass
+
+        return actions
 
 
 def env_worker(remote, env_fn):

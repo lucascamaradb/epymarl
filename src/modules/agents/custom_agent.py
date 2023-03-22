@@ -54,8 +54,10 @@ class CNNAgent(CustomAgent):
         return torch.Tensor([0])
 
     def _get_output_shape(self):
-        v = torch.randn(self.in_shape).unsqueeze(0).to(self.device)
-        return self.net(v)[0].shape
+        with torch.no_grad():
+            v = torch.randn(self.in_shape).unsqueeze(0).to(self.device)
+            out = self.net(v)[0]
+        return out.shape
 
         # v = torch.randn(self.in_shape)
         # v, _ = self.forward(v)

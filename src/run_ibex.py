@@ -66,8 +66,10 @@ DEFAULT_CONFIG = {
     "robot_gym.view_range": 8,
     "robot_gym.action_grid": True,
     "action_grid": True,
-    "robot_gym.share_intention": "path",
-    "share_intention": "path",
+    # "robot_gym.share_intention": "path",
+    # "share_intention": "path",
+    "robot_gym.share_intention": False,
+    "share_intention": False,
     "seed": 10,
     "t_max": 600_000,
 }
@@ -134,7 +136,7 @@ def train(config=None, default=False):
             n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 5
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-            if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}" ########################
+            if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={2}" ########################
             # if True: txt_args += f" runner=\"episode\" batch_size_run={1}"
             # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             print("python3 " + txt_args)
@@ -148,7 +150,8 @@ def register_env(id,config):
             "sz": (config["robot_gym.size"], config["robot_gym.size"]),
             "n_agents": config["robot_gym.N_agents"],
             "n_obj": config["robot_gym.N_obj"],
-            "render": False,
+            # "render": False,
+            "render": True,
             "comm": config["robot_gym.N_comm"],
             "hardcoded_comm": config["robot_gym.hardcoded_comm"],
             "view_range": config["robot_gym.view_range"],
@@ -176,9 +179,9 @@ if __name__ == "__main__":
         default_config = False
     except:
         # args = parser.parse_args(["gridworld_cnn_vs_mlp/q16v7456"]) # cnn
-        args = parser.parse_args(["gridworld_cnn_vs_mlp/kmsqfd3i"]) # test sweep
+        args = parser.parse_args(["gridworld_cnn_vs_mlp/hhd1f9po"]) # test sweep
         # args = parser.parse_args(["gridworld_cnn_vs_mlp/sqwrhes7"]) # hardcoded
-        default_config = False
+        default_config = True
 
     # sweep_id = wandb_root + args.wandb_sweep
     sweep_id = args.wandb_sweep

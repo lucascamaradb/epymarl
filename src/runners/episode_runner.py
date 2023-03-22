@@ -18,6 +18,8 @@ class EpisodeRunner:
 
         self.t_env = 0
 
+        self.step_env_info = None
+
         self.train_returns = []
         self.test_returns = []
         self.train_stats = {}
@@ -44,6 +46,7 @@ class EpisodeRunner:
         self.batch = self.new_batch()
         self.env.reset()
         self.t = 0
+        self.step_env_info = None
 
     def run(self, test_mode=False):
         self.reset()
@@ -65,9 +68,13 @@ class EpisodeRunner:
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+            # Filter actions!
+            actions = self.filter_actions_by_robot_position(actions)
 
             reward, terminated, env_info = self.env.step(actions[0])
             episode_return += reward
+            self.step_env_info = env_info.copy()
+            env_info.pop("robot_info", None)
 
             post_transition_data = {
                 "actions": actions,
@@ -88,6 +95,7 @@ class EpisodeRunner:
 
         # Select actions in the last stored state
         actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+        actions = self.filter_actions_by_robot_position(actions)
         self.batch.update({"actions": actions}, ts=self.t)
 
         cur_stats = self.test_stats if test_mode else self.train_stats
@@ -121,3 +129,25 @@ class EpisodeRunner:
             if k != "n_episodes":
                 self.logger.log_stat(prefix + k + "_mean" , v/stats["n_episodes"], self.t_env)
         stats.clear()
+
+    ############# NEW
+    def filter_actions_by_robot_position(self, actions):
+        if self.step_env_info is None:
+            return actions
+        
+        # Convert each robot's stored command to an action
+        shape = self.env.ind_observation_space.shape[:2]
+        # print(f"SHAPE EPISODE RUNNER: {shape}")
+        for i,e in enumerate(self.step_env_info["robot_info"]):
+            pos, cmd = e
+            if cmd is None or cmd==(None, None): continue
+            dif = (cmd[0]-pos[0]+shape[0]//2, cmd[1]-pos[1]+shape[1]//2)
+            try:
+                act = np.ravel_multi_index(dif, shape)
+                # assert dif==np.unravel_index(act, shape)
+                actions[0][i] = act
+            except:
+                print('hey')
+                pass
+
+        return actions
