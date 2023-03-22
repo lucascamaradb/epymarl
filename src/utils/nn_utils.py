@@ -160,16 +160,9 @@ def check_valid_string(string):
 
 
 if __name__=="__main__":
-    # default_str = "conv2d,16,3,1,0 conv2d,9,3,1,0 batchNorm2d relu & linear,50 relu linear,25 relu"
-    # default_str = " & linear,50 relu linear,25 relu"
-    # default_str = "conv2d,16,3,1,0 relu conv2d,32,5,1,0 relu conv2d,1,1 & "
-    # default_str = "conv2d,10,3,1,0;relu;conv2d,10,5,1,0;relu;avgPool2d,5,1,0&"
-    # default_str = "conv2d,16,3,1,0 conv2d,9,3,1,0 batchNorm2d relu & "
-    # default_str = "resnet&"
-    # default_str = "resnet;conv2d,64,1;relu;interpolate,2;conv2d,1,1;relu;interpolate,1.7&"
-    default_str = "conv2d,32,5,1,2;relu;conv2d,64,5,1,2;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
-    default_str = "conv2d,32,5,1,2;relu;conv2d,64,5,1,2;conv2d,16,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
-
+    # default_str="batchNorm2d;conv2d,64,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,32,5,1,2;relu;conv2d,32,5,1,2;batchNorm2d;conv2d,16,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
+    # default_str="batchNorm2d;conv2d,64,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,32,3,1,1;relu;conv2d,32,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
+    default_str="batchNorm2d;conv2d,32,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
     input_shape = (5,17,17)
 
     # net, out = net_from_string(default_str, input_shape=input_shape)
