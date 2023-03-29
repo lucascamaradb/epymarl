@@ -2,6 +2,7 @@ from smac.env import MultiAgentEnv
 import gym
 import numpy as np
 from gym.wrappers import TimeLimit as GymTimeLimit
+from robot_gym.env import EPyMARLWrapper, HardcodedWrapper, HardcodedCommWrapper, HardcodedNavWrapper
 
 class TimeLimit(GymTimeLimit):
     @property
@@ -15,7 +16,17 @@ class TimeLimit(GymTimeLimit):
 class GridworldWrapper(MultiAgentEnv):
     def __init__(self, key, time_limit, pretrained_wrapper, **kwargs):
         self.episode_limit = time_limit
-        self._env = TimeLimit(gym.make(f"{key}"), max_episode_steps=time_limit)
+        self.hardcoded = kwargs.pop("hardcoded", False)
+        assert self.hardcoded in [False, "comm", "nav"], f"Unexpected value for env_args.hardcoded: {self.hardcoded}"
+        env = gym.make(f"{key}")
+        
+        if self.hardcoded == "comm":
+            env = HardcodedCommWrapper(env)
+        elif self.hardcoded == "nav":
+            env = HardcodedNavWrapper(env)
+
+        env = EPyMARLWrapper(env)
+        self._env = TimeLimit(env, max_episode_steps=time_limit)
         # self._env = FlattenObservation(self._env)
 
         if pretrained_wrapper:
