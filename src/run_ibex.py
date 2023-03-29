@@ -75,17 +75,15 @@ DEFAULT_CONFIG = {
 }
 
 def run_hardcoded(env, config):
+    env = robot_gym.env.HardcodedWrapper(env)
     rwd_lst = []
     try:
-        for j in range(100):
+        for _ in range(100):
             obs = env.reset()
             tot_rwd = 0
             for k in range(100):
-                actions = tuple([ env.map.robots[i].get_action(obs[i]) for i in range(env.n_agents) ])
-                # print(actions)
-                # print([env.map.robots[0].sep_act(a) for a in actions])
-                obs, rwd, done, _ = env.step(actions)
-                # env.render()
+                obs, rwd, done, _ = env.step()
+                env.render()
                 tot_rwd += sum(rwd)
 
             print(f"TOTAL REWARD: {tot_rwd}")
