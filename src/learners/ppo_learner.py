@@ -45,10 +45,16 @@ class PPOLearner:
         terminated = batch["terminated"][:, :-1].float()
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
+        target_updates = batch["target_update"][:, :-1].squeeze(dim=-1)
         actions = actions[:, :-1]
         if self.args.standardise_rewards:
             self.rew_ms.update(rewards)
             rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
+
+        mask = mask.repeat(1, 1, self.n_agents)
+        critic_mask = mask.clone() # the critic is trained at each step, independent of individual target updates
+        # Filter out where target_update = 0
+        mask = th.logical_and( mask, target_updates ).float()
 
         # No experiences to train on in this minibatch
         if mask.sum() == 0:
@@ -56,16 +62,17 @@ class PPOLearner:
             self.logger.console_logger.error("Actor Critic Learner: mask.sum() == 0 at t_env {}".format(t_env))
             return
 
-        mask = mask.repeat(1, 1, self.n_agents)
-
-        critic_mask = mask.clone()
+        
 
         old_mac_out = []
         self.old_mac.init_hidden(batch.batch_size)
         for t in range(batch.max_seq_length - 1):
-            agent_outs = self.old_mac.forward(batch, t=t)
+            agent_outs, _ = self.old_mac.forward(batch, t=t)
             old_mac_out.append(agent_outs)
-        old_mac_out = th.stack(old_mac_out, dim=1)  # Concat over time
+        try:
+            old_mac_out = th.stack(old_mac_out, dim=1)  # Concat over time
+        except:
+            pass
         old_pi = old_mac_out
         old_pi[mask == 0] = 1.0
 
@@ -76,7 +83,7 @@ class PPOLearner:
             mac_out = []
             self.mac.init_hidden(batch.batch_size)
             for t in range(batch.max_seq_length - 1):
-                agent_outs = self.mac.forward(batch, t=t)
+                agent_outs, _ = self.mac.forward(batch, t=t)
                 mac_out.append(agent_outs)
             mac_out = th.stack(mac_out, dim=1)  # Concat over time
 

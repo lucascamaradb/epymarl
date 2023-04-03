@@ -23,6 +23,9 @@ class CNNAgent(CustomAgent):
         self.in_channels = input_shape[0]
         self.intention = None
 
+        self.n_actions = args.n_actions
+        self.n_agents = args.n_agents
+
         self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, 
                                                    target_shape=(args.n_actions,) if not args.action_grid else "same")
         self.net = self.net.to(self.device)
@@ -30,7 +33,7 @@ class CNNAgent(CustomAgent):
         # self.dist_given_act = self.dist_grid(self.out_shape[-1], gamma=.5)
         # self.multiplier_act = torch.cat([x.unsqueeze(0) for x in self.dist_given_act.values()],0).to(self.device)
 
-    def forward(self, input, hidden_state=None):
+    def forward(self, input, hidden_state=None, env_info=None):
         # if len(input.shape)==3:
         if input.dim() == 3:
             input = input.unsqueeze(0)
@@ -43,7 +46,9 @@ class CNNAgent(CustomAgent):
             v = torch.flatten(v, start_dim=-3)
         except:
             print(v)
-        return v, torch.Tensor([0])
+
+        v, target_update = self.target_update(v, env_info)
+        return v, torch.Tensor([0]), target_update
 
         act_prob = self.grid_to_act(v)
         # act = torch.argmax(act_prob)
@@ -63,6 +68,85 @@ class CNNAgent(CustomAgent):
         # v, _ = self.forward(v)
         # return v.shape
 
+    def target_update(self, v, env_info=None):
+        # Decides whether to update the controller's target or not
+        L = v.shape[0]
+        v = v.view(-1,self.n_agents,self.n_actions)
+        bs = v.shape[0]
+        target_update = torch.ones(bs, self.n_agents, 1, dtype=torch.uint8)
+        if not isinstance(env_info, list):
+            env_info = [env_info]
+
+        for i,worker_env_info in enumerate(env_info):
+            if worker_env_info is None or worker_env_info.get("robot_info", None) is None:
+                # If there's no information, take all actions
+                continue # target_update=1
+            worker_env_info = worker_env_info["robot_info"]
+            assert len(worker_env_info)==self.n_agents, "Expected len(env_info)==n_agents, from each worker"
+            for j,(pos,cmd) in enumerate(worker_env_info):
+                if cmd is None:
+                    continue
+                dif = (cmd[0]-pos[0], cmd[1]-pos[1])
+                v[i,j,:], target_update[i,j,0] = self.target_update_policy(v[i,j,:], dif)
+
+        v = v.view(L, self.n_actions)
+        target_update = target_update.view(L, 1)
+        return v, target_update
+    
+
+        if env_info is None or env_info.get("robot_info", None) is None:
+            # If there's no information, take all actions
+            return v, torch.ones((L,1), dtype=torch.uint8)
+        if not isinstance(env_info, list):
+            env_info = [env_info]
+
+        env_info = env_info.get("robot_info", None)
+        
+        assert L==len(env_info), "Length of env_info doesn't match"
+        target_update = torch.zeros((L,1), dtype=torch.uint8) # 1 if a new target is set, 0 otherwise
+        for i,(pos,cmd) in enumerate(env_info):
+            if cmd is None:
+                target_update[i] = 1
+                continue
+            dif = (cmd[0]-pos[0], cmd[1]-pos[1])
+            v[i, :], target_update[i] = self.target_update_policy(v[i, :], dif)
+            # Sanity check: check if chosen action corresponds to existing cmd
+            if not target_update[i]:
+                act = torch.argmax(v[i,:])
+                new_dif = self._flat_to_dif(act)
+                assert new_dif==dif, f"Unexpected behavior, dif: {dif}, new dif: {new_dif}"
+
+        return v, target_update
+
+    def target_update_policy(self, actions, current_dif):
+        # TEMPORARY: never reevaluate a target
+        if self._dif_within_obs(current_dif):
+            current_dif = self._clip_to_obs_range(current_dif)
+            actions = -1e10*torch.ones_like(actions)
+            actions[self._dif_to_flat(current_dif)] = 1e10
+            return actions, 0
+        else:
+            return actions, 1
+
+    def _dif_within_obs(self, dif):
+        sz = self.out_shape[1:]
+        return 0 <= dif[0]+sz[0]//2 < sz[0] and 0 <= dif[1]+sz[1]//2 < sz[1]
+    
+    def _clip_to_obs_range(self, dif):
+        sz = self.out_shape[1:]
+        return (min(max(-sz[0]//2, dif[0]), sz[0]//2), min(max(-sz[1]//2, dif[1]), sz[1]//2))
+    
+    def _dif_to_flat(self, dif):
+        sz = self.out_shape[1:]
+        dif = (dif[0]+sz[0]//2, dif[1]+sz[1]//2)
+        return np.ravel_multi_index(dif, sz)
+    
+    def _flat_to_dif(self, act):
+        sz = self.out_shape[1:]
+        dif = np.unravel_index(act, sz)
+        dif = (dif[0]-sz[0]//2, dif[1]-sz[1]//2)
+        return dif
+        
     def grid_to_act(self, grid):
         o = self.multiplier_act * grid
         # Sanity check

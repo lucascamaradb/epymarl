@@ -108,14 +108,16 @@ class ParallelRunner:
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch for each un-terminated env
-            actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, bs=envs_not_terminated, test_mode=test_mode)
+            # actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, bs=envs_not_terminated, test_mode=test_mode)
+            actions, target_updates = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode, env_info=self.step_env_info)
             # Filter actions
-            actions = self.filter_actions_by_robot_position(actions)
+            # actions = self.filter_actions_by_robot_position(actions)
             cpu_actions = actions.to("cpu").numpy()
 
             # Update the actions taken
             actions_chosen = {
-                "actions": actions.unsqueeze(1)
+                "actions": actions.unsqueeze(1),
+                "target_update": target_updates.unsqueeze(1),
             }
             self.batch.update(actions_chosen, bs=envs_not_terminated, ts=self.t, mark_filled=False)
 
@@ -136,12 +138,13 @@ class ParallelRunner:
             # Post step data we will insert for the current timestep
             post_transition_data = {
                 "reward": [],
-                "terminated": []
+                "terminated": [],
             }
             # Data for the next step we will insert in order to select an action
             pre_transition_data = {
                 "state": [],
                 "avail_actions": [],
+                # "target_update": [],
                 "obs": []
             }
 

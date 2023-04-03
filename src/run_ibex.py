@@ -47,8 +47,10 @@ DEFAULT_CONFIG = {
     "config": "mappo", 
     "critic_type": "cnn_cv_critic",
     "env_config": "gridworld", "agent": "cnn",
-    "agent_arch": "resnet;conv2d,64,1;relu;interpolate,2;conv2d,1,1;relu;interpolate,1.7&",
-    "critic_arch": "resnet&batchNorm1d;linear,128;relu;linear,32;relu",
+    # "agent_arch": "resnet;conv2d,64,1;relu;interpolate,2;conv2d,1,1;relu;interpolate,1.7&",
+    # "critic_arch": "resnet&batchNorm1d;linear,128;relu;linear,32;relu",
+    "agent_arch": "batchNorm2d;conv2d,32,3,1,1;relu;conv2d,1,3,1,1&",
+    "critic_arch": "batchNorm2d;conv2d,32,3,1,1;relu;conv2d,1,3,1,1&batchNorm1d;linear,32;relu",
     "strategy": "cnn",
     # "strategy": "hardcoded",
     # "env_config": "gymma",
@@ -57,7 +59,8 @@ DEFAULT_CONFIG = {
     "robot_gym.Lsec": 2,
     "robot_gym.N_agents": 10,
     # "robot_gym.N_comm": 2,
-    "robot_gym.hardcoded_comm": False,
+    # "robot_gym.hardcoded_comm": False,
+    "env_args.hardcoded": False,
     "robot_gym.N_comm": 0,
     "robot_gym.N_obj": [4, 3, 3],
     "robot_gym.comm_range": 8,
@@ -118,7 +121,8 @@ def train(config=None, default=False):
         env_key = register_env(run.id, config)
         print(f"Environment: {env_key}")
 
-        if config["strategy"]=="hardcoded":
+        # if config["env_args.hardcoded"]==True:
+        if config.get("env_args.hardcoded", False) == True:
             results_dict = run_hardcoded(gym.make(env_key), config)
 
             run.summary["best_test_return_mean"] = results_dict["avg"]
@@ -131,15 +135,15 @@ def train(config=None, default=False):
                 os.makedirs(save_path)
 
             # Define script to call
-            n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 52
+            n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 2 #52 ###########################################
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-            if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}" ########################
+            if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
             # if True: txt_args += f" runner=\"episode\" batch_size_run={1}"
             # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             print("python3 " + txt_args)
 
-            # # Run EPyMARL training script
+            # Run EPyMARL training script
             main.main_from_arg(txt_args.split(' '))
 
 def register_env(id,config):
