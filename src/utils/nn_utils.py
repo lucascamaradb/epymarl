@@ -6,6 +6,10 @@ try:
     from . import resnet
 except:
     import resnet
+try:
+    from . import unet
+except:
+    import unet
     
 
 class Interpolate(nn.Module):
@@ -25,6 +29,11 @@ net_config = {
     "resnet": {
         "class": resnet.resnet18,
         "kwargs": ["num_input_channels"],
+        "inferFirst": True,
+        },
+    "unet": {
+        "class": unet.UNet, 
+        "kwargs": ["shape", "in_channels", "out_channels", "min_size"],
         "inferFirst": True,
         },
     "conv2d": {
@@ -72,7 +81,10 @@ def layer_from_string(layer_str, input_shape):
 
     kwargs = {}
     if net_config[layer_type].get("inferFirst", False):
-        values = [str(input_shape[0])]
+        if net_config[layer_type]["kwargs"][0]=="shape":
+            values = [str(input_shape)]
+        else:
+            values = [str(input_shape[0])]
     else:
         values = []
     if len(args)>1:
@@ -87,7 +99,7 @@ def layer_from_string(layer_str, input_shape):
         output_shape = input_shape
     elif layer_type=="flatten":
         output_shape = (prod(input_shape),)
-    elif layer_type in ["resnet","interpolate"]:
+    elif layer_type in ["resnet","unet","interpolate"]:
         x = x.unsqueeze(0)
         output_shape = layer(x).shape[1:]
     else:
@@ -125,8 +137,7 @@ def net_from_string(string, input_shape, target_shape=None):
         if len(target_shape)>1:
             assert output_shape==target_shape, "Output shape must be equal to input shape"
             # Add interpolation layer, if necessary
-            
-            if 1: pass
+            # TODO
         else:
             assert len(target_shape)==1, "Target shape should be the output of a linear layer"
             mlp_str += [f"linear,{target_shape[0]},0"]
@@ -162,7 +173,8 @@ def check_valid_string(string):
 if __name__=="__main__":
     # default_str="batchNorm2d;conv2d,64,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,32,5,1,2;relu;conv2d,32,5,1,2;batchNorm2d;conv2d,16,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
     # default_str="batchNorm2d;conv2d,64,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,32,3,1,1;relu;conv2d,32,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
-    default_str="batchNorm2d;conv2d,32,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
+    # default_str="batchNorm2d;conv2d,32,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
+    default_str = "unet,32,1,2&"
     input_shape = (5,17,17)
 
     # net, out = net_from_string(default_str, input_shape=input_shape)
