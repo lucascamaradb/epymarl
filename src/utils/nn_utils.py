@@ -174,8 +174,8 @@ if __name__=="__main__":
     # default_str="batchNorm2d;conv2d,64,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,32,5,1,2;relu;conv2d,32,5,1,2;batchNorm2d;conv2d,16,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
     # default_str="batchNorm2d;conv2d,64,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,32,3,1,1;relu;conv2d,32,3,1,1;relu;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
     # default_str="batchNorm2d;conv2d,32,5,1,2;relu;conv2d,64,5,1,2;batchNorm2d;conv2d,16,3,1,1;relu;conv2d,1,3,1,1&"
-    default_str = "unet,32,1,2&"
-    input_shape = (5,17,17)
+    default_str = "unet,8,1,2&"
+    input_shape = (8,17,17)
 
     # net, out = net_from_string(default_str, input_shape=input_shape)
     net, out = net_from_string(default_str, input_shape=input_shape, target_shape="same")

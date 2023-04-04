@@ -80,13 +80,13 @@ class UNetBlock(nn.Module):
     def __init__(self, shape, min_size=2):
         assert len(shape)==3
         self.shape = shape
-        print(shape)
+        # print(shape)
         super().__init__()
 
         assert shape[1]==shape[2], "Expected a square image"
         self.down = Down(shape[0], 2*shape[0])
         down_shape = (2*shape[0], shape[1]//2, shape[2]//2)
-        if shape[1]//2 < min_size:
+        if shape[1]//2 <= min_size:
             self.sub_unet = nn.Identity()
         else:
             self.sub_unet = UNetBlock(down_shape, min_size=min_size)

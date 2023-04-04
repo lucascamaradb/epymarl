@@ -5,6 +5,7 @@ env_args:
   time_limit: 100
   pretrained_wrapper: null
   hardcoded: False
+current_target_factor: None
 
 test_greedy: True
 test_nepisode: 100

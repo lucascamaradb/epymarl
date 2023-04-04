@@ -22,6 +22,7 @@ class CNNAgent(CustomAgent):
         self.in_shape = input_shape
         self.in_channels = input_shape[0]
         self.intention = None
+        self.current_target_factor = args.current_target_factor
 
         self.n_actions = args.n_actions
         self.n_agents = args.n_agents
@@ -119,6 +120,11 @@ class CNNAgent(CustomAgent):
         return v, target_update
 
     def target_update_policy(self, actions, current_dif):
+        if self.current_target_factor is not None:
+            current_dif = self._clip_to_obs_range(current_dif)
+            # actions[self._dif_to_flat(current_dif)] += np.log(self.current_target_factor)
+            actions[self._dif_to_flat(current_dif)] += 10
+            return actions, 1
         # TEMPORARY: never reevaluate a target
         if self._dif_within_obs(current_dif):
             current_dif = self._clip_to_obs_range(current_dif)
@@ -128,18 +134,32 @@ class CNNAgent(CustomAgent):
         else:
             return actions, 1
 
+    # def target_update_policy(self, actions, current_dif):
+    #     # TEMPORARY: never reevaluate a target
+    #     if self._dif_within_obs(current_dif):
+    #         current_dif = self._clip_to_obs_range(current_dif)
+    #         actions = -1e10*torch.ones_like(actions)
+    #         actions[self._dif_to_flat(current_dif)] = 1e10
+    #         return actions, 0
+    #     else:
+    #         return actions, 1
+
     def _dif_within_obs(self, dif):
         sz = self.out_shape[1:]
         return 0 <= dif[0]+sz[0]//2 < sz[0] and 0 <= dif[1]+sz[1]//2 < sz[1]
     
     def _clip_to_obs_range(self, dif):
         sz = self.out_shape[1:]
-        return (min(max(-sz[0]//2, dif[0]), sz[0]//2), min(max(-sz[1]//2, dif[1]), sz[1]//2))
+        bound = (sz[0]//2, sz[1]//2)
+        return (min(max(-bound[0], dif[0]), bound[0]-1), min(max(-bound[1], dif[1]), bound[1]-1))
     
     def _dif_to_flat(self, dif):
         sz = self.out_shape[1:]
         dif = (dif[0]+sz[0]//2, dif[1]+sz[1]//2)
-        return np.ravel_multi_index(dif, sz)
+        try:
+            return np.ravel_multi_index(dif, sz)
+        except:
+            pass
     
     def _flat_to_dif(self, act):
         sz = self.out_shape[1:]
