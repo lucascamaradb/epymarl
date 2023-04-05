@@ -60,7 +60,7 @@ DEFAULT_CONFIG = {
     "robot_gym.N_agents": 10,
     # "robot_gym.N_comm": 2,
     # "robot_gym.hardcoded_comm": False,
-    "env_args.hardcoded": False,
+    "env_args.hardcoded": True,
     "robot_gym.N_comm": 0,
     "robot_gym.N_obj": [4, 3, 3],
     "robot_gym.comm_range": 8,
@@ -81,22 +81,32 @@ DEFAULT_CONFIG = {
 def run_hardcoded(env, config):
     env = robot_gym.env.HardcodedWrapper(env)
     rwd_lst = []
+    obj_pickup_rate = []
     try:
         for _ in range(100):
             obs = env.reset()
             tot_rwd = 0
             for k in range(100):
-                obs, rwd, done, _ = env.step()
-                env.render()
-                tot_rwd += sum(rwd)
+                try:
+                    obs, rwd, done, _ = env.step()
+                    env.render()
+                    tot_rwd += sum(rwd)
+                    if any(done): break
+                except Exception as e:
+                    pass
 
             print(f"TOTAL REWARD: {tot_rwd}")
             rwd_lst.append(tot_rwd)
+            obj_pickup_rate.append(env.env.obj_pickup_rate())
+            # print(obj_pickup_rate[-1])
+
         print(f"AVERAGE REWARD: {np.mean(rwd_lst)}")
         print(f"STD DEV: {np.std(rwd_lst)}")
         results = {}
-        results["avg"] = np.mean(rwd_lst)
-        results["std"] = np.std(rwd_lst)
+        results["return_mean"] = np.mean(rwd_lst)
+        results["return_std"] = np.std(rwd_lst)
+        for i in range(len(obj_pickup_rate[0])):
+            results[f"pickup_rate_{i+1}"] = np.mean([x[i] for x in obj_pickup_rate])
         return results
 
     except KeyboardInterrupt:
@@ -125,10 +135,9 @@ def train(config=None, default=False):
         # if config["env_args.hardcoded"]==True:
         if config.get("env_args.hardcoded", False) == True:
             results_dict = run_hardcoded(gym.make(env_key), config)
-
-            run.summary["best_test_return_mean"] = results_dict["avg"]
-            run.summary["return_mean"] = results_dict["avg"]
-            run.summary["return_std"] = results_dict["std"]
+            run.summary["best_test_return_mean"] = results_dict["return_mean"]
+            for k,v in results_dict.items():
+                run.summary[k] = v
         else:
             # Define save path
             save_path = scratch_dir + run.id + "/"
@@ -182,8 +191,8 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_intention/kj5sr4ub"])
-        default_config = False
+        args = parser.parse_args(["gridworld_intention/tqsyzvjx"])
+        default_config = True
 
     # sweep_id = wandb_root + args.wandb_sweep
     sweep_id = args.wandb_sweep

@@ -18,5 +18,4 @@
 # conda activate epymarl
 cd /home/camaral/code/epymarl/src
 # git pull
-# python run_ibex.py ofx576a7 -o
-python run_ibex.py gridworld_intention/1a7wuewm -o
+python run_ibex.py gridworld_intention/tqsyzvjx -o
