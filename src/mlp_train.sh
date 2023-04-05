@@ -4,8 +4,8 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --partition=batch
 #SBATCH -J RobotSweep_MLP
-#SBATCH -o /ibex/scratch/camaral/runs/RobotSweep.%J.out
-#SBATCH -e /ibex/scratch/camaral/runs/RobotSweep.%J.err
+#SBATCH -o /ibex/user/camaral/runs/RobotSweep.%J.out
+#SBATCH -e /ibex/user/camaral/runs/RobotSweep.%J.err
 #SBATCH --mail-user=lucas.camaradantasbezerra@kaust.edu.sa
 #SBATCH --mail-type=ALL
 #SBATCH --time=48:00:00

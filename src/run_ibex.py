@@ -9,10 +9,10 @@ import robot_gym
 import gym
 from gym.envs.registration import register
 
-IBEX = True if os.path.exists("/ibex/scratch/camaral/") else False
+IBEX = True if os.path.exists("/ibex/user/camaral/") else False
 usr_name = "camaral" if os.path.exists("/home/camaral") else "lucas"
 online = True if IBEX else False
-scratch_dir = "/ibex/scratch/camaral/runs/" if IBEX \
+scratch_dir = "/ibex/user/camaral/runs/" if IBEX \
     else f"/home/{usr_name}/scratch/runs/"
 wandb_root = "lucascamara/gridworld/"
 base_dir = f"/home/{usr_name}/code/epymarl"
