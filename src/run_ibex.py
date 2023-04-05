@@ -68,6 +68,7 @@ DEFAULT_CONFIG = {
     "robot_gym.size": 20,
     "robot_gym.view_range": 8,
     "robot_gym.action_grid": True,
+    "robot_gym.respawn": False,
     "action_grid": True,
     # "robot_gym.share_intention": "path",
     # "share_intention": "path",
@@ -162,6 +163,7 @@ def register_env(id,config):
             "max_obj_lvl": 3,
             "action_grid": config["robot_gym.action_grid"],
             "share_intention": config["robot_gym.share_intention"],
+            "respawn": config["robot_gym.respawn"],
         }
     print(kwargs)
 
@@ -180,7 +182,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_intention/ckebcsda"])
+        args = parser.parse_args(["gridworld_intention/kj5sr4ub"])
         default_config = False
 
     # sweep_id = wandb_root + args.wandb_sweep
