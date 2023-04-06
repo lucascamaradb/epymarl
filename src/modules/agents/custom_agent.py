@@ -54,7 +54,6 @@ class CNNAgent(CustomAgent):
         act_prob = self.grid_to_act(v)
         # act = torch.argmax(act_prob)
         return act_prob, torch.Tensor([0]) # returns hidden state
-        # raise NotImplementedError("Custom agent not implemented")
 
     def init_hidden(self):
         return torch.Tensor([0])
@@ -122,8 +121,8 @@ class CNNAgent(CustomAgent):
     def target_update_policy(self, actions, current_dif):
         if self.current_target_factor is not None:
             current_dif = self._clip_to_obs_range(current_dif)
-            # actions[self._dif_to_flat(current_dif)] += np.log(self.current_target_factor)
-            actions[self._dif_to_flat(current_dif)] += 10
+            actions[self._dif_to_flat(current_dif)] += np.log(self.current_target_factor)
+            # actions[self._dif_to_flat(current_dif)] += 10
             return actions, 1
         # TEMPORARY: never reevaluate a target
         if self._dif_within_obs(current_dif):
