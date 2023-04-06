@@ -80,13 +80,13 @@ class UNetBlock(nn.Module):
     def __init__(self, shape, min_size=2):
         assert len(shape)==3
         self.shape = shape
-        # print(shape)
+        print(shape)
         super().__init__()
 
         assert shape[1]==shape[2], "Expected a square image"
         self.down = Down(shape[0], 2*shape[0])
         down_shape = (2*shape[0], shape[1]//2, shape[2]//2)
-        if shape[1]//2 <= min_size:
+        if down_shape[1]//2 < min_size:
             self.sub_unet = nn.Identity()
         else:
             self.sub_unet = UNetBlock(down_shape, min_size=min_size)
@@ -110,7 +110,10 @@ class UNet(nn.Module):
         
         self.dconv = DoubleConv(shape[0], in_channels)
         shape = (in_channels, *shape[1:])
-        self.sub_unet = UNetBlock(shape, min_size=min_size)
+        if shape[1]//2 < min_size:
+            self.sub_unet = nn.Identity()
+        else:
+            self.sub_unet = UNetBlock(shape, min_size=min_size)
         self.outconv = OutConv(in_channels, 1)
 
     def forward(self, x):
@@ -121,7 +124,7 @@ class UNet(nn.Module):
 
 
 if __name__=="__main__":
-    shape = (100,10,15,15)
+    shape = (100,10,32,32)
     v = torch.randn(*shape)
 
     m = UNet(shape[1:], 32, 1)
