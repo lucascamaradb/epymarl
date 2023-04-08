@@ -60,7 +60,7 @@ DEFAULT_CONFIG = {
     "robot_gym.N_agents": 10,
     # "robot_gym.N_comm": 2,
     # "robot_gym.hardcoded_comm": False,
-    "env_args.hardcoded": True,
+    "env_args.hardcoded": False,
     "robot_gym.N_comm": 0,
     "robot_gym.N_obj": [4, 3, 3],
     "robot_gym.comm_range": 8,
@@ -70,6 +70,7 @@ DEFAULT_CONFIG = {
     "robot_gym.action_grid": True,
     "robot_gym.respawn": False,
     "action_grid": True,
+    "current_target_factor": None,
     # "robot_gym.share_intention": "path",
     # "share_intention": "path",
     "robot_gym.share_intention": False,
@@ -162,7 +163,7 @@ def register_env(id,config):
             "sz": (config["robot_gym.size"], config["robot_gym.size"]),
             "n_agents": config["robot_gym.N_agents"],
             "n_obj": config["robot_gym.N_obj"],
-            "render": not IBEX,
+            "render": False,#not IBEX,
             "comm": config["robot_gym.N_comm"],
             # "hardcoded_comm": config["robot_gym.hardcoded_comm"],
             "view_range": config["robot_gym.view_range"],
@@ -191,7 +192,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_intention/tqsyzvjx"])
+        args = parser.parse_args(["gridworld_intention/uut7ibba"])
         default_config = True
 
     # sweep_id = wandb_root + args.wandb_sweep

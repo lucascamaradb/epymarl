@@ -69,11 +69,17 @@ class SoftPoliciesSelector():
     def __init__(self, args):
         self.args = args
 
-    def select_action(self, agent_inputs, avail_actions, t_env, test_mode=False):
+    def select_action(self, agent_inputs, target_updates, avail_actions, t_env, test_mode=False, env_info=None):
         m = Categorical(agent_inputs)
         picked_actions = m.sample().long()
-        return picked_actions
-
+        prev_actions = self._build_prev_actions(env_info, agent_inputs)
+        target_updates = th.logical_and(picked_actions != prev_actions, target_updates.squeeze())
+        return picked_actions, 1*target_updates
+    
+    def _build_prev_actions(self, env_info, agent_inputs):
+        env_info = env_info.get("act_info", None)
+        if env_info is None: return -1*th.ones_like(agent_inputs)
+        return th.Tensor(env_info)
 
 REGISTRY["soft_policies"] = SoftPoliciesSelector
 
