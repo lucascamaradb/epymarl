@@ -52,7 +52,6 @@ class CNNAgent(CustomAgent):
         env_info = self._flatten_env_info(env_info)
         return v, torch.Tensor([0]), target_update, env_info
 
-
     def init_hidden(self):
         return torch.Tensor([0])
 
@@ -76,7 +75,7 @@ class CNNAgent(CustomAgent):
             env_info = [env_info]
 
         for i,worker_env_info in enumerate(env_info):
-            if worker_env_info is None or worker_env_info.get("robot_info", None) is None:
+            if worker_env_info in [None,0] or worker_env_info.get("robot_info", None) is None:
                 # If there's no information, take all actions
                 continue # target_update=1
             worker_env_info = worker_env_info["robot_info"]
@@ -129,7 +128,7 @@ class CNNAgent(CustomAgent):
         info_list = []
         for i,worker_env_info in enumerate(env_info):
             worker_info_list = [-1]*self.n_agents
-            if worker_env_info is None or worker_env_info.get("robot_info", None) is None:
+            if worker_env_info in [None,0] or worker_env_info.get("robot_info", None) is None:
                 # If there's no information, take all actions
                 info_list.append(worker_info_list)
                 continue
