@@ -67,7 +67,7 @@ class PPOLearner:
         old_mac_out = []
         self.old_mac.init_hidden(batch.batch_size)
         for t in range(batch.max_seq_length - 1):
-            agent_outs, _ = self.old_mac.forward(batch, t=t)
+            agent_outs, _, _ = self.old_mac.forward(batch, t=t)
             old_mac_out.append(agent_outs)
         try:
             old_mac_out = th.stack(old_mac_out, dim=1)  # Concat over time
@@ -83,7 +83,7 @@ class PPOLearner:
             mac_out = []
             self.mac.init_hidden(batch.batch_size)
             for t in range(batch.max_seq_length - 1):
-                agent_outs, _ = self.mac.forward(batch, t=t)
+                agent_outs, _, _ = self.mac.forward(batch, t=t)
                 mac_out.append(agent_outs)
             mac_out = th.stack(mac_out, dim=1)  # Concat over time
 
