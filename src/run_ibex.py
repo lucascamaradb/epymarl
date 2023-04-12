@@ -49,8 +49,8 @@ DEFAULT_CONFIG = {
     "env_config": "gridworld", "agent": "cnn",
     # "agent_arch": "resnet;conv2d,64,1;relu;interpolate,2;conv2d,1,1;relu;interpolate,1.7&",
     # "critic_arch": "resnet&batchNorm1d;linear,128;relu;linear,32;relu",
-    "agent_arch": "batchNorm2d;conv2d,32,3,1,1;relu;conv2d,1,3,1,1&",
-    "critic_arch": "batchNorm2d;conv2d,32,3,1,1;relu;conv2d,1,3,1,1&batchNorm1d;linear,32;relu",
+    "agent_arch": "unet,8,1,2&",
+    "critic_arch": "unet,8,1,2&batchNorm1d;linear,50;relu",
     "strategy": "cnn",
     # "strategy": "hardcoded",
     # "env_config": "gymma",
@@ -66,17 +66,18 @@ DEFAULT_CONFIG = {
     "robot_gym.comm_range": 8,
     # "robot_gym.size": 40,
     "robot_gym.size": 20,
-    "robot_gym.view_range": 8,
+    "robot_gym.view_range": 4,
     "robot_gym.action_grid": True,
-    "robot_gym.respawn": False,
+    "robot_gym.respawn": True,
     "action_grid": True,
     "current_target_factor": None,
-    # "robot_gym.share_intention": "path",
-    # "share_intention": "path",
-    "robot_gym.share_intention": False,
-    "share_intention": False,
+    "robot_gym.share_intention": "path",
+    "share_intention": "path",
+    # "robot_gym.share_intention": False,
+    # "share_intention": False,
     "seed": 10,
-    "t_max": 600_000,
+    "t_max": 2_000_000,
+    "env_args.curriculum": True,
 }
 
 def run_hardcoded(env, config):
@@ -192,7 +193,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_intention/uut7ibba"])
+        args = parser.parse_args(["gridworld_intention/dop3mpws"])
         default_config = True
 
     # sweep_id = wandb_root + args.wandb_sweep

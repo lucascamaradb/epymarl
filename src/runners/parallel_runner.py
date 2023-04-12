@@ -93,7 +93,13 @@ class ParallelRunner:
 
         self.step_env_info = None
 
+    def _set_test_mode(self, test_mode):
+        for conn in self.parent_conns:
+            conn.send(("set_mode", test_mode))
+            assert conn.recv(), "Setting environment mode didn't work"
+
     def run(self, test_mode=False):
+        self._set_test_mode(test_mode)
         self.reset()
 
         all_terminated = False
@@ -291,6 +297,8 @@ def env_worker(remote, env_fn):
             remote.send(env.get_env_info())
         elif cmd == "get_stats":
             remote.send(env.get_stats())
+        elif cmd == "set_mode":
+            remote.send(env.set_mode(data))
         else:
             raise NotImplementedError
 

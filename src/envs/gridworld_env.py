@@ -2,7 +2,7 @@ from smac.env import MultiAgentEnv
 import gym
 import numpy as np
 from gym.wrappers import TimeLimit as GymTimeLimit
-from robot_gym.env import EPyMARLWrapper, HardcodedWrapper, HardcodedCommWrapper, HardcodedNavWrapper
+from robot_gym.env import EPyMARLWrapper, HardcodedWrapper, HardcodedCommWrapper, HardcodedNavWrapper, CurriculumWrapper
 
 class TimeLimit(GymTimeLimit):
     @property
@@ -11,14 +11,24 @@ class TimeLimit(GymTimeLimit):
 
     def state(self):
         return self.env.state()
+
+    def set_mode(self, test_mode):
+        try:
+            return self.env.set_mode(test_mode)
+        except:
+            return False
     
 
 class GridworldWrapper(MultiAgentEnv):
     def __init__(self, key, time_limit, pretrained_wrapper, **kwargs):
         self.episode_limit = time_limit
         self.hardcoded = kwargs.pop("hardcoded", False)
+        self.curriculum = kwargs.pop("curriculum", False)
         assert self.hardcoded in [False, "comm", "nav"], f"Unexpected value for env_args.hardcoded: {self.hardcoded}"
         env = gym.make(f"{key}")
+
+        if self.curriculum:
+            env = CurriculumWrapper(env)
         
         if self.hardcoded == "comm":
             env = HardcodedCommWrapper(env)
@@ -48,6 +58,12 @@ class GridworldWrapper(MultiAgentEnv):
         self._obs = [self._channels_first(x) for x in self._obs]
         if isinstance(done, bool): done = [done]
         return float(sum(reward)), all(done), info
+    
+    def set_mode(self, test_mode):
+        try:
+            return self._env.set_mode(test_mode)
+        except:
+            return False
 
 
     def get_obs(self):
