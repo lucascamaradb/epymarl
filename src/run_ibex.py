@@ -148,6 +148,7 @@ def train(config=None, default=False):
 
             # Define script to call
             n_parallel = os.getenv("SLURM_CPUS_PER_TASK") if IBEX else 2
+            config["batch_size_run"] = n_parallel # add number of parallel envs to config
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
@@ -193,8 +194,9 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_intention/dop3mpws"])
-        default_config = True
+        # args = parser.parse_args(["gridworld_intention/dop3mpws"])
+        args = parser.parse_args(["gridworld_intention/4mfl89by"])
+        default_config = False
 
     # sweep_id = wandb_root + args.wandb_sweep
     sweep_id = args.wandb_sweep
