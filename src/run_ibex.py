@@ -134,6 +134,11 @@ def train(config=None, default=False):
         env_key = register_env(run.id, config)
         print(f"Environment: {env_key}")
 
+        if config.get("current_target_factor", None) is not None:
+            run.summary["log_current_target_factor"] = np.log(config["current_target_factor"])
+        else:
+            run.summary["log_current_target_factor"] = None
+
         # if config["env_args.hardcoded"]==True:
         if config.get("env_args.hardcoded", False) == True:
             results_dict = run_hardcoded(gym.make(env_key), config)
