@@ -131,9 +131,17 @@ class GridworldWrapper(MultiAgentEnv):
     def _channels_first(self, obs):
         if isinstance(obs, np.ndarray):
             assert len(obs.shape)==3, "Expected 3D tensor: WxHxC"
-            return np.transpose(obs, [2,0,1])
+            assert obs.shape[1]==obs.shape[2], f"All library should be in channel-first standard, but got shape: {obs.shape}"
+            # raise NotImplementedError("Channels-first")
+            # return np.transpose(obs, [2,0,1])
         elif isinstance(obs, tuple):
             assert len(obs)==3, "Expected 3D shape: WxHxC"
-            return (obs[2], obs[0], obs[1])
+            assert obs[1]==obs[2]
+            # raise NotImplementedError("Channels-first got tuple")
+            # return (obs[2], obs[0], obs[1])
         else:
             raise TypeError("Unexpected type")
+        return obs
+        
+    def get_channel_info(self):
+        return self._env.get_channel_info()
