@@ -32,18 +32,18 @@ class ParallelRunner:
         self.parent_conns[0].send(("get_env_info", None))
         self.env_info = self.parent_conns[0].recv()
         self.episode_limit = self.env_info["episode_limit"]
-
         self.t = 0
-
         self.t_env = 0
 
         self.obs_shape = None
         self.step_env_info = None
 
-        self.train_returns = []
-        self.test_returns = []
-        self.train_stats = {}
-        self.test_stats = {}
+        # self.train_returns = []
+        # self.test_returns = []
+        # self.train_stats = {}
+        # self.test_stats = {}
+        self.returns = {}
+        self.stats = {}
 
         self.log_train_stats_t = -100000
 
@@ -99,8 +99,27 @@ class ParallelRunner:
             assert conn.recv(), "Setting environment mode didn't work"
 
     def run(self, test_mode=False):
+        if not test_mode:
+            return self._run()
+        else:
+            self._run(test_mode, log_prefix="test_")
+            # channel_info = self.env.get_channel_info()
+            self.parent_conns[0].send(("get_channel_info", None))
+            channel_info = self.parent_conns[0].recv()
+            for k,v in channel_info.items():
+                if v is None: continue
+                if isinstance(v, int): v = [v]
+                prefix = f"permute_{k}_"
+                self._run(test_mode, channels_to_shuffle=v, log_prefix=prefix)
+            return True
+
+    def _run(self, test_mode=False, channels_to_shuffle=[], log_prefix=""):
         self._set_test_mode(test_mode)
         self.reset()
+        if self.returns.get(log_prefix, None) is None:
+            self.returns[log_prefix] = []
+        if self.stats.get(log_prefix, None) is None:
+            self.stats[log_prefix] = {}
 
         all_terminated = False
         episode_returns = [0 for _ in range(self.batch_size)]
@@ -182,8 +201,8 @@ class ParallelRunner:
 
                     # Data for the next timestep needed to select an action
                     pre_transition_data["state"].append(data["state"])
-                    pre_transition_data["avail_actions"].append(data["avail_actions"])
-                    pre_transition_data["obs"].append(data["obs"])
+                    pre_transition_data["avail_actions"].append(data["avail_actions"])                    
+                    pre_transition_data["obs"].append(self._shuffle_channels(data["obs"], channels_to_shuffle))
 
             # Add post_transiton data into the batch
             self.batch.update(post_transition_data, bs=envs_not_terminated, ts=self.t, mark_filled=False)
@@ -206,9 +225,11 @@ class ParallelRunner:
             env_stat = parent_conn.recv()
             env_stats.append(env_stat)
 
-        cur_stats = self.test_stats if test_mode else self.train_stats
-        cur_returns = self.test_returns if test_mode else self.train_returns
-        log_prefix = "test_" if test_mode else ""
+        # cur_stats = self.test_stats if test_mode else self.train_stats
+        # cur_returns = self.test_returns if test_mode else self.train_returns
+        cur_stats = self.stats[log_prefix]
+        cur_returns = self.returns[log_prefix]
+        # log_prefix = "test_" if test_mode else ""
         infos = [cur_stats] + final_env_infos
         cur_stats.update({k: sum(d.get(k, 0) for d in infos) for k in set.union(*[set(d) for d in infos])})
         cur_stats["n_episodes"] = self.batch_size + cur_stats.get("n_episodes", 0)
@@ -217,7 +238,7 @@ class ParallelRunner:
         cur_returns.extend(episode_returns)
 
         n_test_runs = max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
-        if test_mode and (len(self.test_returns) == n_test_runs):
+        if test_mode and (len(self.returns[log_prefix]) == n_test_runs):
             self._log(cur_returns, cur_stats, log_prefix)
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
             self._log(cur_returns, cur_stats, log_prefix)
@@ -257,6 +278,30 @@ class ParallelRunner:
                     pass
 
         return actions
+    
+    def _shuffle_channels(self, obs, channels_to_shuffle):
+        idxs = {}
+        # if isinstance(channels_to_shuffle, slice):
+        #     channels_to_shuffle = [] # CONVERT SLICE TO RANGE
+        if isinstance(channels_to_shuffle, slice) or len(channels_to_shuffle)>0:
+            obs = np.stack(obs)
+            copy_obs = obs.copy()
+            for c in channels_to_shuffle:
+                for _ in range(10):
+                    try:
+                        np.random.shuffle(obs[:,c])
+                    except Exception as e:
+                        print(e)
+                    if not np.all(copy_obs[:,c]==obs[:,c]): break
+
+            # Sanity check
+            for c in range(obs.shape[1]):
+                if c not in channels_to_shuffle:
+                    assert np.all(copy_obs[:,c]==obs[:,c])
+            
+            return tuple([obs[i] for i in range(obs.shape[0])])
+        else:
+            return obs
 
 
 def env_worker(remote, env_fn):
@@ -295,6 +340,8 @@ def env_worker(remote, env_fn):
             break
         elif cmd == "get_env_info":
             remote.send(env.get_env_info())
+        elif cmd == "get_channel_info":
+            remote.send(env.get_channel_info())
         elif cmd == "get_stats":
             remote.send(env.get_stats())
         elif cmd == "set_mode":

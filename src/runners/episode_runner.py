@@ -20,10 +20,13 @@ class EpisodeRunner:
 
         self.step_env_info = None
 
-        self.train_returns = []
-        self.test_returns = []
-        self.train_stats = {}
-        self.test_stats = {}
+        # self.train_returns = []
+        # self.test_returns = []
+        # self.train_stats = {}
+        # self.test_stats = {}
+
+        self.returns = {}
+        self.stats = {}
 
         # Log the first run
         self.log_train_stats_t = -1000000
@@ -48,8 +51,29 @@ class EpisodeRunner:
         self.t = 0
         self.step_env_info = None
 
+    def _set_test_mode(self, test_mode):
+        self.env.set_mode(test_mode)
+
     def run(self, test_mode=False):
+        if not test_mode:
+            return self._run()
+        else:
+            self._run(test_mode, log_prefix="test_")
+            channel_info = self.env.get_channel_info()
+            for k,v in channel_info.items():
+                if v is None: continue
+                if isinstance(v, int): v = [v]
+                prefix = f"permute_{k}_"
+                self._run(test_mode, channels_to_shuffle=v, log_prefix=prefix)
+            return True
+
+    def _run(self, test_mode=False, channels_to_shuffle=[], log_prefix=""):
+        self._set_test_mode(test_mode)
         self.reset()
+        if self.returns.get(log_prefix, None) is None:
+            self.returns[log_prefix] = []
+        if self.stats.get(log_prefix, None) is None:
+            self.stats[log_prefix] = {}
 
         terminated = False
         episode_return = 0
@@ -60,7 +84,7 @@ class EpisodeRunner:
             pre_transition_data = {
                 "state": [self.env.get_state()],
                 "avail_actions": [self.env.get_avail_actions()],
-                "obs": [self.env.get_obs()]
+                "obs": [self._shuffle_channels(self.env.get_obs(), channels_to_shuffle)]
             }
 
             self.batch.update(pre_transition_data, ts=self.t)
@@ -69,7 +93,6 @@ class EpisodeRunner:
             # Receive the actions for each agent at this timestep in a batch of size 1
             actions, target_updates = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode, env_info=self.step_env_info)
             # Filter actions!
-            # actions = self.filter_actions_by_robot_position(actions)
 
             reward, terminated, env_info = self.env.step(actions[0])
             episode_return += reward
@@ -90,18 +113,20 @@ class EpisodeRunner:
         last_data = {
             "state": [self.env.get_state()],
             "avail_actions": [self.env.get_avail_actions()],
-            "obs": [self.env.get_obs()]
+            "obs": [self._shuffle_channels(self.env.get_obs(), channels_to_shuffle)]
         }
         self.batch.update(last_data, ts=self.t)
 
         # Select actions in the last stored state
         actions, target_updates = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
-        # actions = self.filter_actions_by_robot_position(actions)
         self.batch.update({"actions": actions, "target_update": target_updates}, ts=self.t)
 
-        cur_stats = self.test_stats if test_mode else self.train_stats
-        cur_returns = self.test_returns if test_mode else self.train_returns
-        log_prefix = "test_" if test_mode else ""
+        # cur_stats = self.test_stats if test_mode else self.train_stats
+        # cur_returns = self.test_returns if test_mode else self.train_returns
+        cur_stats = self.stats[log_prefix]
+        cur_returns = self.returns[log_prefix]
+
+        # log_prefix = "test_" if test_mode else ""
         cur_stats.update({k: cur_stats.get(k, 0) + env_info.get(k, 0) for k in set(cur_stats) | set(env_info)})
         cur_stats["n_episodes"] = 1 + cur_stats.get("n_episodes", 0)
         cur_stats["ep_length"] = self.t + cur_stats.get("ep_length", 0)
@@ -111,7 +136,7 @@ class EpisodeRunner:
 
         cur_returns.append(episode_return)
 
-        if test_mode and (len(self.test_returns) == self.args.test_nepisode):
+        if test_mode and (len(self.returns[log_prefix]) == self.args.test_nepisode):
             self._log(cur_returns, cur_stats, log_prefix)
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
             self._log(cur_returns, cur_stats, log_prefix)
@@ -131,7 +156,9 @@ class EpisodeRunner:
                 self.logger.log_stat(prefix + k + "_mean" , v/stats["n_episodes"], self.t_env)
         stats.clear()
 
-    ############# NEW
+    def _set_test_mode(self, test_mode):
+        self.env.set_mode(test_mode)
+
     def filter_actions_by_robot_position(self, actions):
         if self.step_env_info is None:
             return actions
@@ -152,3 +179,27 @@ class EpisodeRunner:
                 pass
 
         return actions
+    
+    def _shuffle_channels(self, obs, channels_to_shuffle):
+        idxs = {}
+        # if isinstance(channels_to_shuffle, slice):
+        #     channels_to_shuffle = [] # CONVERT SLICE TO RANGE
+        if isinstance(channels_to_shuffle, slice) or len(channels_to_shuffle)>0:
+            obs = np.stack(obs)
+            copy_obs = obs.copy()
+            for c in channels_to_shuffle:
+                for _ in range(10):
+                    try:
+                        np.random.shuffle(obs[:,c])
+                    except Exception as e:
+                        print(e)
+                    if not np.all(copy_obs[:,c]==obs[:,c]): break
+
+            # Sanity check
+            for c in range(obs.shape[1]):
+                if c not in channels_to_shuffle:
+                    assert np.all(copy_obs[:,c]==obs[:,c])
+            
+            return tuple([obs[i] for i in range(obs.shape[0])])
+        else:
+            return obs
