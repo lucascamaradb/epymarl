@@ -73,6 +73,14 @@ class SoftPoliciesSelector():
         m = Categorical(agent_inputs)
         picked_actions = m.sample().long()
         prev_actions = self._build_prev_actions(env_info, agent_inputs)
+        # prev_actions = self._build_prev_actions(env_info, agent_inputs).to(picked_actions) # for all possible comms
+        # n_comms = prev_actions.shape[-1]
+        # # picked_actions = picked_actions.unsqueeze(-1).repeat(1,1,n_comms)
+
+        # temp = th.clone(target_updates.squeeze(-1)).to(picked_actions)
+        # for prev in th.split(prev_actions, 1, dim=-1):
+        #     # separate prev actions for each possible comms
+        #     temp = th.logical_and(temp, picked_actions != prev)
         target_updates = th.logical_and(picked_actions != prev_actions.to(picked_actions), target_updates.squeeze().to(picked_actions))
         return picked_actions, 1*target_updates
     

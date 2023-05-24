@@ -27,8 +27,12 @@ class CNNAgent(CustomAgent):
         self.n_actions = args.n_actions
         self.n_agents = args.n_agents
 
-        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, 
-                                                   target_shape=(args.n_actions,) if not args.action_grid else "same")
+        self.n_out_channels = int(args.n_actions/(input_shape[1]*input_shape[2]))
+        assert args.action_grid, "Only action grid supported"
+        assert self.n_out_channels == 1, "Comms not supported"
+        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape,
+                                                #    target_shape=(args.n_actions,) if not args.action_grid else "same")
+                                                    target_shape=(self.n_out_channels,*input_shape[1:]))
         self.net = self.net.to(self.device)
 
         # self.dist_given_act = self.dist_grid(self.out_shape[-1], gamma=.5)
@@ -66,6 +70,7 @@ class CNNAgent(CustomAgent):
         # return v.shape
 
     def target_update(self, v, env_info=None):
+        # TODO: Consider communications
         # Decides whether to update the controller's target or not
         L = v.shape[0]
         v = v.view(-1,self.n_agents,self.n_actions)
@@ -121,12 +126,27 @@ class CNNAgent(CustomAgent):
             return np.ravel_multi_index(dif, sz)
         except:
             return -1
+    # def _dif_to_flat(self, dif):
+    #     sz = self.out_shape
+    #     assert len(sz)==3, "Output shape should be 3D"
+    #     difs = []
+    #     dif = (dif[0]+sz[1]//2, dif[1]+sz[2]//2)
+    #     for c in range(self.out_shape[0]):
+    #         comm_dif = (c, *dif)
+    #         try:
+    #             print(comm_dif)
+    #             print(np.ravel_multi_index(comm_dif, sz))
+    #             difs.append(np.ravel_multi_index(comm_dif, sz))
+    #         except:
+    #             difs.append(-1)
+    #     return difs
         
     def _flatten_env_info(self, env_info):
         if not isinstance(env_info, list):
             env_info = [env_info]
         info_list = []
         for i,worker_env_info in enumerate(env_info):
+            # worker_info_list = [[-1 for _ in range(self.n_out_channels)]]*self.n_agents
             worker_info_list = [-1]*self.n_agents
             if worker_env_info in [None,0] or worker_env_info.get("robot_info", None) is None:
                 # If there's no information, take all actions
@@ -138,6 +158,7 @@ class CNNAgent(CustomAgent):
                 if cmd is None:
                     continue
                 dif = (cmd[0]-pos[0], cmd[1]-pos[1])
+                # worker_info_list[j] = self._dif_to_flat(dif) if self._dif_within_obs(dif) else [-1 for _ in range(self.n_out_channels)]
                 worker_info_list[j] = self._dif_to_flat(dif) if self._dif_within_obs(dif) else -1
             info_list.append(worker_info_list)
         info_list = {"act_info": info_list}
