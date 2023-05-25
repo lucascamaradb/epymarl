@@ -2,7 +2,7 @@ from smac.env import MultiAgentEnv
 import gym
 import numpy as np
 from gym.wrappers import TimeLimit as GymTimeLimit
-from robot_gym.env import EPyMARLWrapper, HardcodedWrapper, HardcodedCommWrapper, HardcodedNavWrapper, CurriculumWrapper
+from robot_gym.env import *
 
 class TimeLimit(GymTimeLimit):
     @property
@@ -31,7 +31,7 @@ class GridworldWrapper(MultiAgentEnv):
             env = CurriculumWrapper(env)
         
         if self.hardcoded == "comm":
-            env = HardcodedCommWrapper(env)
+            env = HardcodedCommWrapper(env, policy=TargetObjLvlCommPolicy)
         elif self.hardcoded == "nav":
             env = HardcodedNavWrapper(env)
 
