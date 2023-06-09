@@ -44,7 +44,10 @@ def run(_run, _config, _log):
 
     args.unique_token = unique_token
     if args.wandb_sweep:
-        wandb.run.summary["unique_token"] = unique_token
+        try:
+            wandb.run.summary["unique_token"] = unique_token
+        except AttributeError:
+            pass
 
     if args.use_tensorboard:
         tb_logs_direc = os.path.join(
