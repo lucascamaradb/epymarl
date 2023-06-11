@@ -14,7 +14,7 @@ import yaml
 import wandb
 import traceback
 
-from run import run
+from run import run, run_build
 
 SETTINGS['CAPTURE_MODE'] = "fd" # set to "no" if you want to see stdout/stderr in console
 logger = get_logger()
@@ -58,6 +58,14 @@ def my_main(_run, _config, _log):
     # run the framework
     run(_run, config, _log)
 
+def main_build(_config, _log):
+    config = config_copy(_config)
+    np.random.seed(config["seed"])
+    th.manual_seed(config["seed"])
+    config['env_args']['seed'] = config["seed"]
+
+    return run_build(None, config, _log)
+
 
 def _get_config(params, arg_name, subfolder):
     config_name = None
@@ -92,12 +100,31 @@ def config_copy(config):
         return [config_copy(v) for v in config]
     else:
         return deepcopy(config)
+    
+def parse_params(params):
+    p_dict = {}
+    for p in params:
+        p = p.split('=')
+        if len(p)!=2: continue
+        key, value = p
+        try:
+            value = eval(value)
+        except:
+            pass
+        # Check for subkeys
+        key = key.split('.')
+        if len(key)==2:
+            if p_dict.get(key[0], None) is None:
+                p_dict[key[0]] = {}
+            p_dict[key[0]][key[1]] = value
+        elif len(key)==1:
+            p_dict[key[0]] = value
+        else:
+            raise RuntimeError(f"Unexpected behavior: {p}, dict more than 2-layers deep?")
+    return p_dict
 
-def main_from_arg(argv):
-    # print(argv)
+def main_from_arg(argv, just_build=False):
     params = deepcopy(argv)
-    # print(params)
-    # print("\n\n\n\n\n\n\n\n\n\n\n")
     th.set_num_threads(1)
 
     # Get the defaults from default.yaml
@@ -138,7 +165,16 @@ def main_from_arg(argv):
     # ex.observers.append(MongoObserver())
 
     try:
-        ex.run_commandline(params)
+        if just_build:   
+            # Add params to config
+            new_config = config_copy(config_dict)
+            params_dict = parse_params(params)
+            new_config = recursive_dict_update(new_config, params_dict)
+
+            return main_build(new_config, logger)
+        else:
+            ex.run_commandline(params)
+            return True
     except Exception as e:
         # exit gracefully, so wandb logs the problem
         print(traceback.print_exc(), file=sys.stderr)

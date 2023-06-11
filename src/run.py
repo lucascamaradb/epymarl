@@ -17,9 +17,7 @@ from controllers import REGISTRY as mac_REGISTRY
 from components.episode_buffer import ReplayBuffer
 from components.transforms import OneHot
 
-
-def run(_run, _config, _log):
-
+def build_args(_run, _config, _log):
     # check args sanity
     _config = args_sanity_check(_config, _log)
 
@@ -61,7 +59,14 @@ def run(_run, _config, _log):
         logger.setup_wandb(args.wandb_sweep)
 
     # sacred is on by default
-    logger.setup_sacred(_run)
+    if _run is not None:
+        logger.setup_sacred(_run)
+
+    return args, logger
+
+def run(_run, _config, _log):
+    # Build args and logger
+    args, logger = build_args(_run, _config, _log)
 
     # Run and train
     run_sequential(args=args, logger=logger)
@@ -71,7 +76,7 @@ def run(_run, _config, _log):
         # art = wandb.Artifact(name="models_"+unique_token, type="model")
         art = wandb.Artifact(name="models_"+wandb.run.id, type="model")
         try:
-            path = closest_model(args.save_path+"results/models/"+unique_token+"/", logger.best_return_step)
+            path = closest_model(args.save_path+"results/models/"+args.unique_token+"/", logger.best_return_step)
             art.add_dir(path)
         except:
             print("WARNING: SAVING ALL MODELS")
@@ -96,6 +101,12 @@ def run(_run, _config, _log):
     # Making sure framework really exits
     # os._exit(os.EX_OK)
 
+def run_build(_run, _config, _log):
+    # Build args and logger
+    args, logger = build_args(_run, _config, _log)
+
+    # Build components
+    return build(args=args, logger=logger)
 
 def closest_model(save_path, best_ind):
     dirs = [x[0] for x in os.walk(save_path)][1:]
@@ -105,7 +116,6 @@ def closest_model(save_path, best_ind):
         if d >= best_ind:
             break
     return save_path+str(d)+"/"
-
 
 def evaluate_sequential(args, runner):
 
@@ -117,8 +127,7 @@ def evaluate_sequential(args, runner):
 
     runner.close_env()
 
-
-def run_sequential(args, logger):
+def build(args, logger):
     # Init runner so we can get env info
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
@@ -203,6 +212,12 @@ def run_sequential(args, logger):
             logger.print_recent_stats()
             logger.console_logger.info("Finished Evaluation")
             return
+        
+    return runner, buffer, learner
+    
+
+def run_sequential(args, logger):
+    runner, buffer, learner = build(args, logger)
 
     # start training
     episode = 0

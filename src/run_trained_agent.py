@@ -223,14 +223,16 @@ def eval(run):
         config["batch_size_run"] = n_parallel # add number of parallel envs to config
         txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=False'
         # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-        if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
+        # if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
         txt_args += f" runner=\"episode\" batch_size_run={1}"
         # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         txt_args += f' checkpoint_path="{checkpoint_path}" load_step={config["t_max"]}'
         print("python3 " + txt_args)
 
         # Run EPyMARL training script
-        main.main_from_arg(txt_args.split(' '))
+        runner, buffer, learner = main.main_from_arg(txt_args.split(' '), just_build=True)
+
+        print(runner, buffer, learner)
 
 def register_env(id,config):
     env_id = f"GridWorld-Custom-{id}-v0"
@@ -244,7 +246,7 @@ def register_env(id,config):
             "view_range": config["robot_gym.view_range"],
             "comm_range": config["robot_gym.comm_range"],
             "Lsec": config["robot_gym.Lsec"],
-            "one_hot_obj_lvl": False,
+            "one_hot_obj_lvl": True,
             "max_obj_lvl": 3,
             "action_grid": config["robot_gym.action_grid"],
             "share_intention": config["robot_gym.share_intention"],
@@ -265,7 +267,7 @@ if __name__ == "__main__":
     try:
         args = parser.parse_args()
     except:
-        args = parser.parse_args(["gridworld_intention/0nbn99ls"])
+        args = parser.parse_args(["gridworld_intention/z1wpfiwq"])
 
     # Run script
     eval(args.wandb_run)
