@@ -17,4 +17,4 @@
 cd /home/camaral/code/epymarl/src
 # git pull
 # python run_ibex.py ofx576a7 -o
-python run_ibex.py gridworld_cnn_vs_mlp/kv8kdfuo -o
+python run_ibex.py gridworld_intention/xjnxvqhw -o

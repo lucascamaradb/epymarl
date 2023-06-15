@@ -219,7 +219,10 @@ def eval(run):
             os.makedirs(save_path)
 
         # Define script to call
-        n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else 2
+        try:
+            n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else 2
+        except:
+            n_parallel = 2
         config["batch_size_run"] = n_parallel # add number of parallel envs to config
         txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=False'
         # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'

@@ -103,15 +103,19 @@ class ParallelRunner:
             return self._run()
         else:
             self._run(test_mode, log_prefix="test_")
-            # channel_info = self.env.get_channel_info()
-            self.parent_conns[0].send(("get_channel_info", None))
-            channel_info = self.parent_conns[0].recv()
-            for k,v in channel_info.items():
-                if v is None: continue
-                if isinstance(v, int): v = [v]
-                prefix = f"permute_{k}_"
-                self._run(test_mode, channels_to_shuffle=v, log_prefix=prefix)
+            # self.run_perm_importance()
             return True
+        
+    def run_perm_importance(self):
+        channel_info = self.env.get_channel_info()
+        self.parent_conns[0].send(("get_channel_info", None))
+        channel_info = self.parent_conns[0].recv()
+        for k,v in channel_info.items():
+            if v is None: continue
+            if isinstance(v, int): v = [v]
+            prefix = f"permute_{k}_"
+            self._run(True, channels_to_shuffle=v, log_prefix=prefix)
+        return True
 
     def _run(self, test_mode=False, channels_to_shuffle=[], log_prefix=""):
         self._set_test_mode(test_mode)
