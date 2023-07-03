@@ -6,6 +6,7 @@ env_args:
   pretrained_wrapper: null
   hardcoded: False
   curriculum: False
+agent_distance_exp: 1.
 current_target_factor: None
 
 test_greedy: True

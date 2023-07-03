@@ -10,7 +10,7 @@ import gym
 from gym.envs.registration import register
 
 IBEX = True if os.path.exists("/ibex/user/camaral/") else False
-usr_name = "camaral" if os.path.exists("/home/camaral") else "lucas"
+usr_name = "camaral" if IBEX else os.getlogin()
 online = True if IBEX else False
 scratch_dir = "/ibex/user/camaral/runs/" if IBEX \
     else f"/home/{usr_name}/scratch/runs/"
@@ -59,6 +59,7 @@ DEFAULT_CONFIG = {
     "robot_gym.Lsec": 2,
     "robot_gym.N_agents": 10,
     "env_args.hardcoded": "comm",
+    "agent_distance_exp": 1.,
     "robot_gym.N_comm": 4,
     "robot_gym.N_obj": [4, 3, 3],
     "robot_gym.comm_range": 8,
@@ -67,6 +68,7 @@ DEFAULT_CONFIG = {
     "robot_gym.view_range": 4,
     "robot_gym.action_grid": True,
     "robot_gym.respawn": True,
+    "robot_gym.obj_lvl_rwd_exp": 2.,
     "action_grid": True,
     "current_target_factor": None,
     # "robot_gym.share_intention": "path",
@@ -177,6 +179,7 @@ def register_env(id,config):
             "comm_range": config["robot_gym.comm_range"],
             "Lsec": config["robot_gym.Lsec"],
             "one_hot_obj_lvl": True,
+            "obj_lvl_rwd_exp": config["robot_gym.obj_lvl_rwd_exp"],
             "max_obj_lvl": 3,
             "action_grid": config["robot_gym.action_grid"],
             "share_intention": config["robot_gym.share_intention"],
@@ -200,7 +203,7 @@ if __name__ == "__main__":
         default_config = False
     except:
         args = parser.parse_args(["gridworld_intention/0kftwdhj"])
-        default_config = True
+        default_config = False
 
     # sweep_id = wandb_root + args.wandb_sweep
     sweep_id = args.wandb_sweep

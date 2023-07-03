@@ -26,13 +26,13 @@ class CNNAgent(CustomAgent):
 
         self.n_actions = args.n_actions
         self.n_agents = args.n_agents
+        self.agent_distance_exp = self.dist_grid(input_shape[1], gamma=args.agent_distance_exp)["0"]
 
         self.n_out_channels = int(args.n_actions/(input_shape[1]*input_shape[2]))
+        self.target_shape = (self.n_out_channels,*input_shape[1:])
         assert args.action_grid, "Only action grid supported"
         assert self.n_out_channels == 1, "Comms not supported"
-        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape,
-                                                #    target_shape=(args.n_actions,) if not args.action_grid else "same")
-                                                    target_shape=(self.n_out_channels,*input_shape[1:]))
+        self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, target_shape=self.target_shape)
         self.net = self.net.to(self.device)
 
         # self.dist_given_act = self.dist_grid(self.out_shape[-1], gamma=.5)
@@ -46,6 +46,7 @@ class CNNAgent(CustomAgent):
             raise ValueError("Not enough dimensions in input")
 
         v = self.net(input)
+        v = self.agent_distance_exp*v # Apply distance factor
         self.intention = v
         try:
             v = torch.flatten(v, start_dim=-3)

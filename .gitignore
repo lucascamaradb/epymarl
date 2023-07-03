@@ -253,3 +253,4 @@ $RECYCLE.BIN/
 wandb
 src/wandb
 src/dcgm
+src/test.py
