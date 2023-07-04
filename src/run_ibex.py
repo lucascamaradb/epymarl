@@ -67,10 +67,11 @@ DEFAULT_CONFIG = {
     "robot_gym.size": 20,
     "robot_gym.view_range": 4,
     "robot_gym.action_grid": True,
-    "robot_gym.respawn": True,
+    "robot_gym.respawn": False,
     "robot_gym.obj_lvl_rwd_exp": 2.,
     "action_grid": True,
     "current_target_factor": None,
+    "filter_avail_by_objects": False,
     # "robot_gym.share_intention": "path",
     # "share_intention": "path",
     # "robot_gym.share_intention": False,
@@ -79,7 +80,7 @@ DEFAULT_CONFIG = {
     "share_intention": "channel",
     "seed": 10,
     "t_max": 2_000_000,
-    "env_args.curriculum": True,
+    "env_args.curriculum": False,
 }
 
 def run_hardcoded(env, config):
@@ -202,8 +203,8 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_intention/0kftwdhj"])
-        default_config = False
+        args = parser.parse_args(["gridworld_intention/ih9y1s6h"])
+        default_config = True
 
     # sweep_id = wandb_root + args.wandb_sweep
     sweep_id = args.wandb_sweep

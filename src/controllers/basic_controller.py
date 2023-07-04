@@ -1,7 +1,9 @@
 from modules.agents import REGISTRY as agent_REGISTRY
 from components.action_selectors import REGISTRY as action_REGISTRY
 import torch as th
+import numpy as np
 
+from itertools import product
 
 # This multi-agent controller shares parameters between agents
 class BasicMAC:
@@ -11,6 +13,7 @@ class BasicMAC:
         self.input_shape = self._get_input_shape(scheme)
         self._build_agents(self.input_shape)
         self.agent_output_type = args.agent_output_type
+        self.filter_avail_by_objects = args.filter_avail_by_objects
 
         self.action_selector = action_REGISTRY[args.action_selector](args)
 
@@ -19,6 +22,9 @@ class BasicMAC:
     def select_actions(self, ep_batch, t_ep, t_env, bs=slice(None), test_mode=False, env_info=None):
         # Only select actions for the selected batch elements in bs
         avail_actions = ep_batch["avail_actions"][:, t_ep]
+        # Constrain targets to objects
+        if self.filter_avail_by_objects:
+            avail_actions = self._filter_avail(avail_actions, ep_batch["obs"][:, t_ep])
         agent_outputs, target_updates, env_info = self.forward(ep_batch, t_ep, test_mode=test_mode, env_info=env_info)
         chosen_actions, target_updates = self.action_selector.select_action(agent_outputs[bs], target_updates[bs], avail_actions[bs], t_env, test_mode=test_mode, env_info=env_info)
         return chosen_actions, target_updates
@@ -26,6 +32,9 @@ class BasicMAC:
     def forward(self, ep_batch, t, test_mode=False, env_info=None):
         agent_inputs = self._build_inputs(ep_batch, t)
         avail_actions = ep_batch["avail_actions"][:, t]
+        # Constrain targets to objects
+        if self.filter_avail_by_objects:
+            avail_actions = self._filter_avail(avail_actions, ep_batch["obs"][:, t])
         agent_outs, self.hidden_states, target_updates, env_info = self.agent(agent_inputs, self.hidden_states, env_info)
         # agent_outs, self.hidden_states = self.agent(agent_inputs, self.hidden_states, env_info)
 
@@ -103,3 +112,19 @@ class BasicMAC:
             input_shape += self.n_agents
 
         return input_shape
+
+    def _filter_avail(self, avail_actions, obs):
+        if not self.filter_avail_by_objects:
+            return avail_actions
+        
+        obj_channels = [i for i in range(1,4)] # assuming max_obj_lvl=3 and one_hot_obj_lvl=True
+        obj = obs[:,:,obj_channels]
+        obj_flag = obj[:,:,0]
+        for i in range(1,obj.shape[2]): # loop across all obj channels
+            obj_flag = th.logical_or(obj_flag, obj[:,:,i])
+        obj_flag_sum = th.sum( obj_flag, dim=tuple(range(2,obj_flag.dim())) )
+        for i,j in product(range(obj.shape[0]), range(obj.shape[1])):
+            # Only apply constraint if at least one object is in view
+            if obj_flag_sum[i,j]>0:
+                avail_actions[i,j] = th.logical_and(avail_actions[i,j], obj_flag[i,j].flatten())
+        return avail_actions

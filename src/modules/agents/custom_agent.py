@@ -39,7 +39,6 @@ class CNNAgent(CustomAgent):
         # self.multiplier_act = torch.cat([x.unsqueeze(0) for x in self.dist_given_act.values()],0).to(self.device)
 
     def forward(self, input, hidden_state=None, env_info=None):
-        # if len(input.shape)==3:
         if input.dim() == 3:
             input = input.unsqueeze(0)
         elif input.dim()<3:
