@@ -291,6 +291,9 @@ def run_sequential(args, logger):
             logger.print_recent_stats()
             last_log_T = runner.t_env
 
+    for _ in range(n_test_runs):
+        runner.run_perm_importance()
+        
     runner.close_env()
     logger.console_logger.info("Finished Training")
 
