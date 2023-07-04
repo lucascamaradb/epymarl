@@ -5,6 +5,7 @@ import numpy as np
 import argparse
 import threading
 import robot_gym
+from multiprocessing import cpu_count
 
 import gym
 from gym.envs.registration import register
@@ -155,7 +156,7 @@ def train(config=None, default=False):
                 os.makedirs(save_path)
 
             # Define script to call
-            n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else 2
+            n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
             config["batch_size_run"] = n_parallel # add number of parallel envs to config
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
