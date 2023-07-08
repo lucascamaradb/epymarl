@@ -107,7 +107,6 @@ class ParallelRunner:
             return True
         
     def run_perm_importance(self):
-        channel_info = self.env.get_channel_info()
         self.parent_conns[0].send(("get_channel_info", None))
         channel_info = self.parent_conns[0].recv()
         for k,v in channel_info.items():

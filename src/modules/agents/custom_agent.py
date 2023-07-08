@@ -26,7 +26,7 @@ class CNNAgent(CustomAgent):
 
         self.n_actions = args.n_actions
         self.n_agents = args.n_agents
-        self.agent_distance_exp = self.dist_grid(input_shape[1], gamma=args.agent_distance_exp)["0"]
+        self.agent_distance_exp = self.dist_grid(input_shape[1], gamma=args.agent_distance_exp)["0"].to(self.device)
 
         self.n_out_channels = int(args.n_actions/(input_shape[1]*input_shape[2]))
         self.target_shape = (self.n_out_channels,*input_shape[1:])
