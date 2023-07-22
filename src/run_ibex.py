@@ -44,14 +44,14 @@ def config2txt(config):
 
 DEFAULT_CONFIG = {
     "buffer_size": 10,
-    # "config": "vdn",
-    "config": "mappo", 
-    "critic_type": "cnn_cv_critic",
+    "config": "qmix",
+    # "config": "mappo", 
+    # "critic_type": "cnn_cv_critic",
     "env_config": "gridworld", "agent": "cnn",
     # "agent_arch": "resnet;conv2d,64,1;relu;interpolate,2;conv2d,1,1;relu;interpolate,1.7&",
     # "critic_arch": "resnet&batchNorm1d;linear,128;relu;linear,32;relu",
     "agent_arch": "unet,8,1,2&",
-    "critic_arch": "unet,8,1,2&batchNorm1d;linear,50;relu",
+    # "critic_arch": "unet,8,1,2&batchNorm1d;linear,50;relu",
     "strategy": "cnn",
     # "strategy": "hardcoded",
     # "env_config": "gymma",
@@ -159,10 +159,9 @@ def train(config=None, default=False):
             n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
             config["batch_size_run"] = n_parallel # add number of parallel envs to config
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-            # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
-            if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
+            # if config["config"] not in ["qmix", "vdn"]: txt_args += f" runner=parallel batch_size_run={n_parallel}"
+            txt_args += f" runner=parallel batch_size_run={n_parallel}"
             # if True: txt_args += f" runner=\"episode\" batch_size_run={1}"
-            # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             print("python3 " + txt_args)
 
             # Run EPyMARL training script
