@@ -113,7 +113,18 @@ class ParallelRunner:
             if v is None: continue
             if isinstance(v, int): v = [v]
             prefix = f"permute_{k}_"
-            self._run(True, channels_to_shuffle=v, log_prefix=prefix)
+            self._run(test_mode=True, channels_to_shuffle=v, log_prefix=prefix)
+            # Also log relative permutation importance
+            if not self.args.wandb_sweep: continue
+            try:
+                wandb.run.summary[f"{prefix}relative_return_mean"] = \
+                    wandb.run.summary[f"{prefix}return_mean"] / 
+                    wandb.run.summary[f"test_return_mean"]
+                wandb.run.summary[f"{prefix}relative_return_std"] = \
+                    wandb.run.summary[f"{prefix}return_std"] /
+                    wandb.run.summary[f"test_return_mean"]
+            except:
+                pass
         return True
 
     def _run(self, test_mode=False, channels_to_shuffle=[], log_prefix=""):
