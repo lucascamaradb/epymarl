@@ -8,6 +8,7 @@ env_args:
   curriculum: False
 agent_distance_exp: 1.
 current_target_factor: None
+agent_reeval_rate: None
 
 test_greedy: True
 test_nepisode: 100

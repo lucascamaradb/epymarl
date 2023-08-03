@@ -72,6 +72,7 @@ DEFAULT_CONFIG = {
     "robot_gym.obj_lvl_rwd_exp": 2.,
     "action_grid": True,
     "current_target_factor": None,
+    "agent_reeval_rate": None,
     "filter_avail_by_objects": False,
     # "robot_gym.share_intention": "path",
     # "share_intention": "path",

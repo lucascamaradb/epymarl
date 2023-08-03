@@ -2,7 +2,8 @@ from envs import REGISTRY as env_REGISTRY
 from functools import partial
 from components.episode_buffer import EpisodeBatch
 import numpy as np
-
+import torch as th
+import wandb
 
 class EpisodeRunner:
 
@@ -73,11 +74,9 @@ class EpisodeRunner:
             if not self.args.wandb_sweep: continue
             try:
                 wandb.run.summary[f"{prefix}relative_return_mean"] = \
-                    wandb.run.summary[f"{prefix}return_mean"] / 
-                    wandb.run.summary[f"test_return_mean"]
+                    wandb.run.summary[f"{prefix}return_mean"]/wandb.run.summary[f"test_return_mean"]
                 wandb.run.summary[f"{prefix}relative_return_std"] = \
-                    wandb.run.summary[f"{prefix}return_std"] /
-                    wandb.run.summary[f"test_return_mean"]
+                    wandb.run.summary[f"{prefix}return_std"]/wandb.run.summary[f"test_return_mean"]
             except:
                 pass
         return True
@@ -136,6 +135,9 @@ class EpisodeRunner:
         actions, target_updates = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
         self.batch.update({"actions": actions, "target_update": target_updates}, ts=self.t)
 
+        # Add target update rate to final_env_infos
+        self._target_update_info(env_info)
+
         # cur_stats = self.test_stats if test_mode else self.train_stats
         # cur_returns = self.test_returns if test_mode else self.train_returns
         cur_stats = self.stats[log_prefix]
@@ -167,12 +169,25 @@ class EpisodeRunner:
         returns.clear()
 
         for k, v in stats.items():
-            if k != "n_episodes":
+            if k.startswith("lvl"):
+                self.logger.log_stat(prefix + k, v, self.t_env)
+            elif k != "n_episodes":
                 self.logger.log_stat(prefix + k + "_mean" , v/stats["n_episodes"], self.t_env)
         stats.clear()
 
     def _set_test_mode(self, test_mode):
         self.env.set_mode(test_mode)
+
+    def _target_update_info(self, info):
+        filled = self.batch["filled"].squeeze(-1)
+        # Consider only filled positions in the batch
+        rate = self.batch["target_update"][0, filled[0]>0]
+        # Average over steps and agents
+        info.update({
+            "target_revision":  th.mean(rate[...,0], dtype=float).item(),
+            "target_change":    th.mean(rate[...,1], dtype=float).item(),
+        })
+        return info
 
     def filter_actions_by_robot_position(self, actions):
         if self.step_env_info is None:

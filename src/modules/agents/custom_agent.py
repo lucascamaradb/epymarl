@@ -23,9 +23,11 @@ class CNNAgent(CustomAgent):
         self.in_channels = input_shape[0]
         self.intention = None
         self.current_target_factor = args.current_target_factor
-
+        self.reeval_prob = 1. if args.agent_reeval_rate in (None,True) else (1-np.exp(-args.agent_reeval_rate))
+        
         self.n_actions = args.n_actions
         self.n_agents = args.n_agents
+
         self.agent_distance_exp = self.dist_grid(input_shape[1], gamma=args.agent_distance_exp)["0"].to(self.device)
 
         self.n_out_channels = int(args.n_actions/(input_shape[1]*input_shape[2]))
@@ -53,7 +55,7 @@ class CNNAgent(CustomAgent):
             print(v)
 
         v, target_update = self.target_update(v, env_info)
-        env_info = self._flatten_env_info(env_info)
+        env_info = self._flatten_env_info(env_info, bs=(v.shape[0]//self.n_agents))
         return v, torch.Tensor([0]), target_update, env_info
 
     def init_hidden(self):
@@ -75,40 +77,44 @@ class CNNAgent(CustomAgent):
         L = v.shape[0]
         v = v.view(-1,self.n_agents,self.n_actions)
         bs = v.shape[0]
-        target_update = torch.ones(bs, self.n_agents, 1, dtype=torch.uint8)
+        target_update = torch.ones(bs, self.n_agents, 2, dtype=torch.uint8) # 0: revision, 1: change
         if not isinstance(env_info, list):
-            env_info = [env_info]
+            env_info = [env_info]*bs
+
 
         for i,worker_env_info in enumerate(env_info):
             if worker_env_info in [None,0] or worker_env_info.get("robot_info", None) is None:
                 # If there's no information, take all actions
+                target_update[i,:,0] = 0
                 continue # target_update=1
             worker_env_info = worker_env_info["robot_info"]
             assert len(worker_env_info)==self.n_agents, "Expected len(env_info)==n_agents, from each worker"
             for j,(pos,cmd) in enumerate(worker_env_info):
                 if cmd is None:
+                    target_update[i,j,0] = 0
                     continue
                 dif = (cmd[0]-pos[0], cmd[1]-pos[1])
-                v[i,j,:], target_update[i,j,0] = self.target_update_policy(v[i,j,:], dif)
+                v[i,j,:], target_update[i,j,:] = self.target_update_policy(v[i,j,:], dif)
 
         v = v.view(L, self.n_actions)
-        target_update = target_update.view(L, 1)
+        target_update = target_update.view(L, 2)
         return v, target_update
 
     def target_update_policy(self, actions, current_dif):
-        if self.current_target_factor is not None:
-            # current_dif = self._clip_to_obs_range(current_dif)
-            actions[self._dif_to_flat(current_dif)] += np.log(self.current_target_factor)
-            # actions[self._dif_to_flat(current_dif)] += 10
-            return actions, 1
-        # If no target factor, never reevaluate a target
-        if self._dif_within_obs(current_dif):
-            # current_dif = self._clip_to_obs_range(current_dif)
+        if not self._dif_within_obs(current_dif):
+            # Continue normally
+            return actions, torch.ones((2,))
+        
+        reeval = True if self.reeval_prob==1 else (np.random.rand()<=self.reeval_prob)
+        if (not reeval) or (self.current_target_factor is None):
+            # Keep target
             actions = -1e10*torch.ones_like(actions)
             actions[self._dif_to_flat(current_dif)] = 1e10
-            return actions, 0
+            return actions, torch.zeros((2,))
         else:
-            return actions, 1
+            # Add current target factor
+            actions[self._dif_to_flat(current_dif)] += np.log(self.current_target_factor)
+            return actions, torch.ones((2,))
 
     def _dif_within_obs(self, dif):
         sz = self.out_shape[1:]
@@ -126,24 +132,10 @@ class CNNAgent(CustomAgent):
             return np.ravel_multi_index(dif, sz)
         except:
             return -1
-    # def _dif_to_flat(self, dif):
-    #     sz = self.out_shape
-    #     assert len(sz)==3, "Output shape should be 3D"
-    #     difs = []
-    #     dif = (dif[0]+sz[1]//2, dif[1]+sz[2]//2)
-    #     for c in range(self.out_shape[0]):
-    #         comm_dif = (c, *dif)
-    #         try:
-    #             print(comm_dif)
-    #             print(np.ravel_multi_index(comm_dif, sz))
-    #             difs.append(np.ravel_multi_index(comm_dif, sz))
-    #         except:
-    #             difs.append(-1)
-    #     return difs
         
-    def _flatten_env_info(self, env_info):
+    def _flatten_env_info(self, env_info, bs):
         if not isinstance(env_info, list):
-            env_info = [env_info]
+            env_info = [env_info]*bs
         info_list = []
         for i,worker_env_info in enumerate(env_info):
             # worker_info_list = [[-1 for _ in range(self.n_out_channels)]]*self.n_agents
@@ -203,17 +195,13 @@ class CNNAgent(CustomAgent):
         }
         return dist_given_act
 
+
 def xy_print(g):
     for y in range(g.shape[1]):
         print("[", end=" ")
         for x in range(g.shape[0]):
             print(g[x,y], end=" ")
         print(" ]")
-
-
-class CurriculumAgent(CNNAgent):
-    pass
-
 
 if __name__=="__main__":
     
@@ -225,4 +213,3 @@ if __name__=="__main__":
     #     print(k)
     #     xy_print(v)
     #     print("")
-

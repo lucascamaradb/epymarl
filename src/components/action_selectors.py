@@ -17,7 +17,9 @@ class BaseSelector:
         # for prev in th.split(prev_actions, 1, dim=-1):
         #     # separate prev actions for each possible comms
         #     temp = th.logical_and(temp, picked_actions != prev)
-        target_updates = th.logical_and(picked_actions != prev_actions.to(picked_actions), target_updates.squeeze().to(picked_actions))
+        temp = picked_actions != prev_actions.to(picked_actions)
+        target_updates[..., 0] = th.logical_and(temp, target_updates[...,0].to(picked_actions))
+        target_updates[..., 1] = th.logical_and(temp, target_updates[...,1].to(picked_actions))
         return 1*target_updates
     
     def _build_prev_actions(self, env_info, agent_inputs):

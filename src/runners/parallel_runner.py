@@ -4,7 +4,7 @@ from components.episode_buffer import EpisodeBatch
 from multiprocessing import Pipe, Process
 import numpy as np
 import torch as th
-
+import wandb
 
 # Based (very) heavily on SubprocVecEnv from OpenAI Baselines
 # https://github.com/openai/baselines/blob/master/baselines/common/vec_env/subproc_vec_env.py
@@ -118,11 +118,9 @@ class ParallelRunner:
             if not self.args.wandb_sweep: continue
             try:
                 wandb.run.summary[f"{prefix}relative_return_mean"] = \
-                    wandb.run.summary[f"{prefix}return_mean"] / 
-                    wandb.run.summary[f"test_return_mean"]
+                    wandb.run.summary[f"{prefix}return_mean"]/wandb.run.summary[f"test_return_mean"]
                 wandb.run.summary[f"{prefix}relative_return_std"] = \
-                    wandb.run.summary[f"{prefix}return_std"] /
-                    wandb.run.summary[f"test_return_mean"]
+                    wandb.run.summary[f"{prefix}return_std"]/wandb.run.summary[f"test_return_mean"]
             except:
                 pass
         return True
@@ -156,7 +154,7 @@ class ParallelRunner:
             # Update the actions taken
             actions_chosen = {
                 "actions": actions.unsqueeze(1),
-                "target_update": target_updates.unsqueeze(1),
+                "target_update": target_updates,
             }
             self.batch.update(actions_chosen, bs=envs_not_terminated, ts=self.t, mark_filled=False)
 
@@ -239,6 +237,9 @@ class ParallelRunner:
             env_stat = parent_conn.recv()
             env_stats.append(env_stat)
 
+        # Add target update rate to final_env_infos
+        self._target_update_info(final_env_infos)
+
         # cur_stats = self.test_stats if test_mode else self.train_stats
         # cur_returns = self.test_returns if test_mode else self.train_returns
         cur_stats = self.stats[log_prefix]
@@ -248,7 +249,7 @@ class ParallelRunner:
         cur_stats.update({k: sum(d.get(k, 0) for d in infos) for k in set.union(*[set(d) for d in infos])})
         cur_stats["n_episodes"] = self.batch_size + cur_stats.get("n_episodes", 0)
         cur_stats["ep_length"] = sum(episode_lengths) + cur_stats.get("ep_length", 0)
-
+        
         cur_returns.extend(episode_returns)
 
         n_test_runs = max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
@@ -268,9 +269,26 @@ class ParallelRunner:
         returns.clear()
 
         for k, v in stats.items():
-            if k != "n_episodes":
+            if k.startswith("lvl"):
+                self.logger.log_stat(prefix + k, v, self.t_env)
+            elif k != "n_episodes":
                 self.logger.log_stat(prefix + k + "_mean" , v/stats["n_episodes"], self.t_env)
         stats.clear()
+
+    def _target_update_info(self, info):
+        assert self.batch["target_update"].shape[0] == len(info), \
+            f"Unexpected behavior, batch.shape[0]={self.batch.shape[0]}, len(prev_info)={len(info)}"
+        filled = self.batch["filled"].squeeze(-1)
+
+        for i,p_info in enumerate(info):
+            # Consider only filled positions in the batch
+            rate = self.batch["target_update"][i, filled[i]>0]
+            # Average over steps and agents
+            p_info.update({
+                "target_revision":  th.mean(rate[...,0], dtype=float).item(),
+                "target_change":    th.mean(rate[...,1], dtype=float).item(),
+            })
+        return info
 
     def filter_actions_by_robot_position(self, actions):
         if self.step_env_info is None or self.obs_shape is None:

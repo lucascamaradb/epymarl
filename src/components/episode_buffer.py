@@ -52,10 +52,6 @@ class EpisodeBatch:
         scheme.update({
             "filled": {"vshape": (1,), "dtype": th.long},
         })
-        # New field. Stores whether a new command was set in the robot controller
-        scheme.update({
-            "target_update": {"vshape": (1,), "group": "agents", "dtype": th.uint8},
-        })
 
         for field_key, field_info in scheme.items():
             assert "vshape" in field_info, "Scheme must define vshape for {}".format(field_key)
