@@ -113,8 +113,10 @@ class CNNAgent(CustomAgent):
             actions[self._dif_to_flat(current_dif)] = 1e10
             return actions, torch.zeros((2,))
         else:
-            # Add current target factor
-            actions[self._dif_to_flat(current_dif)] += np.log(self.current_target_factor)
+            # # Add current target factor
+            # actions[self._dif_to_flat(current_dif)] += np.log(self.current_target_factor)
+            # Multiply by target factor
+            actions[self._dif_to_flat(current_dif)] *= self.current_target_factor
             return actions, torch.ones((2,))
 
     def _dif_within_obs(self, dif):
