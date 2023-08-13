@@ -23,7 +23,8 @@ class CNNAgent(CustomAgent):
         self.in_channels = input_shape[0]
         self.intention = None
         self.current_target_factor = args.current_target_factor
-        self.reeval_prob = 1. if args.agent_reeval_rate in (None,True) else (1-np.exp(-args.agent_reeval_rate))
+        self.reeval_prob = 1. if (args.agent_reeval_rate is None or args.agent_reeval_rate is True) \
+            else (1-np.exp(-args.agent_reeval_rate))
         
         self.n_actions = args.n_actions
         self.n_agents = args.n_agents
