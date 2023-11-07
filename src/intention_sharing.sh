@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=16
 #SBATCH --partition=batch
 #SBATCH -J RobotSweep
 #SBATCH -o /ibex/user/camaral/runs/RobotSweep.%J.out
 #SBATCH -e /ibex/user/camaral/runs/RobotSweep.%J.err
 #SBATCH --mail-user=lucas.camaradantasbezerra@kaust.edu.sa
 #SBATCH --mail-type=ALL
-#SBATCH --time=48:00:00
+#SBATCH --time=96:00:00
 #SBATCH --mem=100G
 #SBATCH --gpus-per-node=1
 #SBATCH --constraint=v100
@@ -17,4 +17,4 @@
 # conda activate epymarl
 cd /home/camaral/code/epymarl/src
 # git pull
-python run_ibex.py gridworld_intention/kkpi67nq -o
+python run_ibex.py gridworld_paper/dw6a0i0z -o

@@ -45,7 +45,7 @@ class PPOLearner:
         terminated = batch["terminated"][:, :-1].float()
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
-        target_updates = batch["target_update"][:, :-1].squeeze(dim=-1)
+        target_updates = batch["target_update"][:, :-1][...,1]
         actions = actions[:, :-1]
         if self.args.standardise_rewards:
             self.rew_ms.update(rewards)

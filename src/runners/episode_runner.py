@@ -169,9 +169,10 @@ class EpisodeRunner:
         returns.clear()
 
         for k, v in stats.items():
-            if k.startswith("lvl"):
-                self.logger.log_stat(prefix + k, v, self.t_env)
-            elif k != "n_episodes":
+            # if k.startswith("lvl"):
+            #     self.logger.log_stat(prefix + k, v, self.t_env)
+            # elif k != "n_episodes":
+            if k != "n_episodes":
                 self.logger.log_stat(prefix + k + "_mean" , v/stats["n_episodes"], self.t_env)
         stats.clear()
 
