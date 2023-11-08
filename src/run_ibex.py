@@ -10,12 +10,10 @@ from multiprocessing import cpu_count
 import gym
 from gym.envs.registration import register
 
-IBEX = True if os.path.exists("/ibex/user/camaral/") else False
-usr_name = "camaral" if IBEX else os.getlogin()
-online = True if IBEX else False
-scratch_dir = "/ibex/user/camaral/runs/" if IBEX \
+IBEX = True if os.path.exists("/ibex/user/") else False
+usr_name = os.environ['USER']
+scratch_dir = f"/ibex/user/{usr_name}/runs/" if IBEX \
     else f"/home/{usr_name}/scratch/runs/"
-wandb_root = "lucascamara/gridworld/"
 base_dir = f"/home/{usr_name}/code/epymarl"
 # sys.path.append(base_dir)
 
@@ -120,7 +118,7 @@ def run_hardcoded(env, config):
         env.close()
 
 
-def train(config=None, default=False):
+def train(config=None, default=False, online=False):
     mode = "online" if online else "offline"
     with wandb.init(config=config, mode=mode) as run:
         config = DEFAULT_CONFIG if default else wandb.config
@@ -157,7 +155,8 @@ def train(config=None, default=False):
                 os.makedirs(save_path)
 
             # Define script to call
-            n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
+            n_parallel = 20 if IBEX else min(cpu_count()//2, 20)
+            # n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
             config["batch_size_run"] = n_parallel # add number of parallel envs to config
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # if config["config"] not in ["qmix", "vdn"]: txt_args += f" runner=parallel batch_size_run={n_parallel}"
@@ -200,15 +199,15 @@ def register_env(id,config):
 if __name__ == "__main__":
     parser.add_argument("wandb_sweep", type=str, help="WANDB Sweep ID")
     parser.add_argument("-o", "--online", action="store_true", help="Upload experiment to WANDB")
+    parser.add_argument("-c", "--count", type=int, default=0, help="Run count (optional)")
     try:
         args = parser.parse_args()
         default_config = False
     except:
         args = parser.parse_args(["gridworld_intention/ih9y1s6h"])
-        default_config = True
+        default_config = True # overrides config sent from W&B
 
-    # sweep_id = wandb_root + args.wandb_sweep
     sweep_id = args.wandb_sweep
-    online = args.online
-    wandb.agent(sweep_id, lambda *args, **kw: train(default=default_config,*args, **kw))
+    run_count = args.count if args.count > 0 else None
+    wandb.agent(sweep_id, lambda *args, **kw: train(default=default_config, online=args.online, *args, **kw), count=run_count)
     # wandb.agent(sweep_id, train, count=1)

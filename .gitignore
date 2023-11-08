@@ -254,3 +254,4 @@ wandb
 src/wandb
 src/dcgm
 src/test.py
+src/logs/*
