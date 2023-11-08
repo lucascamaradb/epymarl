@@ -116,13 +116,13 @@ class ParallelRunner:
             self._run(test_mode=True, channels_to_shuffle=v, log_prefix=prefix)
             # Also log relative permutation importance
             if not self.args.wandb_sweep: continue
-            try:
-                wandb.run.summary[f"{prefix}relative_return_mean"] = \
-                    wandb.run.summary[f"{prefix}return_mean"]/wandb.run.summary[f"test_return_mean"]
-                wandb.run.summary[f"{prefix}relative_return_std"] = \
-                    wandb.run.summary[f"{prefix}return_std"]/wandb.run.summary[f"test_return_mean"]
-            except:
-                pass
+            # try:
+            #     wandb.run.summary[f"{prefix}relative_return_mean"] = \
+            #         wandb.run.summary[f"{prefix}return_mean"]/wandb.run.summary[f"test_return_mean"]
+            #     wandb.run.summary[f"{prefix}relative_return_std"] = \
+            #         wandb.run.summary[f"{prefix}return_std"]/wandb.run.summary[f"test_return_mean"]
+            # except:
+            #     pass
         return True
 
     def _run(self, test_mode=False, channels_to_shuffle=[], log_prefix=""):
@@ -266,6 +266,12 @@ class ParallelRunner:
     def _log(self, returns, stats, prefix):
         self.logger.log_stat(prefix + "return_mean", np.mean(returns), self.t_env)
         self.logger.log_stat(prefix + "return_std", np.std(returns), self.t_env)
+        if prefix not in ["", "test_"]:
+            try:
+                self.logger.log_stat(prefix+"relative_return_mean", np.mean(returns)/self.logger.best_return, self.t_env)
+                self.logger.log_stat(prefix+"relative_return_std", np.std(returns)/self.logger.best_return, self.t_env)
+            except:
+                pass
         returns.clear()
 
         for k, v in stats.items():
