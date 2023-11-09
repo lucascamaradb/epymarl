@@ -10,13 +10,12 @@ import robot_gym
 import gym
 from gym.envs.registration import register
 
-IBEX = True if os.path.exists("/ibex/user/camaral/") else False
-usr_name = os.getlogin()
+IBEX = True if os.path.exists("/ibex/") else False
+usr_name = os.environ["USER"]
 online = True if IBEX else False
-scratch_dir = "/ibex/user/camaral/runs/" if IBEX \
+scratch_dir = f"/ibex/user/{usr_name}/runs/" if IBEX \
     else f"/home/{usr_name}/scratch/runs/"
-# wandb_root = "lucascamara/gridworld/"
-base_dir = f"/home/{usr_name}/code/epymarl"
+# base_dir = f"/home/{usr_name}/code/epymarl"
 # sys.path.append(base_dir)
 
 import main
@@ -79,6 +78,12 @@ DEFAULT_CONFIG = {
     "seed": 10,
     "t_max": 2_000_000,
     "env_args.curriculum": True,
+}
+
+EVAL_CONFIG = {
+    "robot_gym.N_agents": 10,
+    "robot_gym.respawn": True,
+    # "env_args.curriculum": True,
 }
 
 def run_hardcoded(env, config):
@@ -188,6 +193,8 @@ def load_model(run):
 def eval(run):
     run, checkpoint_path = load_model(run)
     config = run.config
+    # Overwrite config with EVAL_CONFIG
+    config = main.recursive_dict_update(config, EVAL_CONFIG)
     try:
         np.random.seed(config["seed"])
     except:
@@ -220,14 +227,15 @@ def eval(run):
 
         # Define script to call
         try:
-            n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else 2
+            n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else 6
         except:
-            n_parallel = 2
+            n_parallel = 6
         config["batch_size_run"] = n_parallel # add number of parallel envs to config
         txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=False'
         # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         # if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
         txt_args += f" runner=\"episode\" batch_size_run={1} evaluate=True"
+        # txt_args += f" runner=\"episode\" batch_size_run={1}"
         # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         txt_args += f' checkpoint_path="{checkpoint_path}" load_step={config["t_max"]}'
         print("python3 " + txt_args)
@@ -243,7 +251,7 @@ def register_env(id,config):
             "sz": (config["robot_gym.size"], config["robot_gym.size"]),
             "n_agents": config["robot_gym.N_agents"],
             "n_obj": config["robot_gym.N_obj"],
-            "render": True,#not IBEX,
+            "render": False,#not IBEX,
             "comm": config["robot_gym.N_comm"],
             # "hardcoded_comm": config["robot_gym.hardcoded_comm"],
             "view_range": config["robot_gym.view_range"],
@@ -270,7 +278,7 @@ if __name__ == "__main__":
     try:
         args = parser.parse_args()
     except:
-        args = parser.parse_args(["gridworld_intention/z1wpfiwq"])
+        args = parser.parse_args(["gridworld_paper/x9piqn8u"])
 
     # Run script
     eval(args.wandb_run)

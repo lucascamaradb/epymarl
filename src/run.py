@@ -10,6 +10,7 @@ from utils.logging import Logger
 from utils.timehelper import time_left, time_str
 from os.path import dirname, abspath
 import shutil
+from tqdm import tqdm
 
 from learners import REGISTRY as le_REGISTRY
 from runners import REGISTRY as r_REGISTRY
@@ -119,7 +120,7 @@ def closest_model(save_path, best_ind):
 
 def evaluate_sequential(args, runner):
 
-    for _ in range(args.test_nepisode):
+    for _ in tqdm(range(args.test_nepisode)):
         runner.run(test_mode=True)
 
     if args.save_replay:
@@ -212,7 +213,6 @@ def build(args, logger):
             logger.log_stat("episode", runner.t_env, runner.t_env)
             logger.print_recent_stats()
             logger.console_logger.info("Finished Evaluation")
-            return
         
     return runner, buffer, learner
     
