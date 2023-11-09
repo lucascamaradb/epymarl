@@ -10,11 +10,12 @@ from multiprocessing import cpu_count
 import gym
 from gym.envs.registration import register
 
-IBEX = True if os.path.exists("/ibex/user/") else False
-usr_name = os.environ['USER']
+IBEX = True if os.path.exists("/ibex/") else False
+usr_name = os.environ["USER"]
+online = True if IBEX else False
 scratch_dir = f"/ibex/user/{usr_name}/runs/" if IBEX \
     else f"/home/{usr_name}/scratch/runs/"
-base_dir = f"/home/{usr_name}/code/epymarl"
+# base_dir = f"/home/{usr_name}/code/epymarl"
 # sys.path.append(base_dir)
 
 import main
@@ -209,5 +210,5 @@ if __name__ == "__main__":
 
     sweep_id = args.wandb_sweep
     run_count = args.count if args.count > 0 else None
-    wandb.agent(sweep_id, lambda *args, **kw: train(default=default_config, online=args.online, *args, **kw), count=run_count)
-    # wandb.agent(sweep_id, train, count=1)
+    online = args.online
+    wandb.agent(sweep_id, lambda *args, **kw: train(default=default_config, online=online, *args, **kw), count=run_count)
