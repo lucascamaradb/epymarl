@@ -43,9 +43,9 @@ def config2txt(config):
 
 DEFAULT_CONFIG = {
     "buffer_size": 10,
-    "config": "qmix",
-    # "config": "mappo", 
-    # "critic_type": "cnn_cv_critic",
+    # "config": "qmix",
+    "config": "mappo", 
+    "critic_type": "cnn_cv_critic",
     "env_config": "gridworld", "agent": "cnn",
     # "agent_arch": "resnet;conv2d,64,1;relu;interpolate,2;conv2d,1,1;relu;interpolate,1.7&",
     # "critic_arch": "resnet&batchNorm1d;linear,128;relu;linear,32;relu",
@@ -82,6 +82,7 @@ DEFAULT_CONFIG = {
     "seed": 10,
     "t_max": 2_000_000,
     "env_args.curriculum": False,
+    "standardise_returns": True, #################
 }
 
 def run_hardcoded(env, config):
@@ -128,6 +129,7 @@ def train(config=None, default=False, online=False):
         except:
             pass
         if IBEX: run.summary["ibex_job_id"] = os.environ["SLURM_JOBID"]
+        run.summary["username"] = os.environ["USER"]
 
         # Save path
         save_path = scratch_dir + run.id + "/"
@@ -205,7 +207,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_intention/ih9y1s6h"])
+        args = parser.parse_args(["gridworld_paper/5opcfwfu"])
         default_config = True # overrides config sent from W&B
 
     sweep_id = args.wandb_sweep
