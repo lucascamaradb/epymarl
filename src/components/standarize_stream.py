@@ -45,5 +45,5 @@ class RunningMeanStd(object):
         self.var = new_var
         self.count = new_count
 
-        if torch.isnan(self.mean) or torch.isnan(self.var):
+        if any(torch.isnan(self.mean)) or any(torch.isnan(self.var)):
             raise ArithmeticError(f"Estimator diverged, mean={self.mean}, var={self.var}")
