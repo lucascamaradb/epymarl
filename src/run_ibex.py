@@ -12,14 +12,12 @@ from gym.envs.registration import register
 
 IBEX = True if os.path.exists("/ibex/") else False
 usr_name = os.environ["USER"]
-online = True if IBEX else False
 scratch_dir = f"/ibex/user/{usr_name}/runs/" if IBEX \
     else f"/home/{usr_name}/scratch/runs/"
 # base_dir = f"/home/{usr_name}/code/epymarl"
 # sys.path.append(base_dir)
 
 import main
-# from main import *
 
 parser = argparse.ArgumentParser(description="Gridworld Training Script")
 
@@ -71,7 +69,7 @@ DEFAULT_CONFIG = {
     "robot_gym.obj_lvl_rwd_exp": 2.,
     "action_grid": True,
     "current_target_factor": None,
-    "agent_reeval_rate": None,
+    "agent_reeval_rate": True,
     "filter_avail_by_objects": False,
     # "robot_gym.share_intention": "path",
     # "share_intention": "path",
@@ -86,7 +84,8 @@ DEFAULT_CONFIG = {
 }
 
 def run_hardcoded(env, config):
-    env = robot_gym.env.HardcodedWrapper(env)
+    env = robot_gym.env.HardcodedWrapper(env, policy=robot_gym.policy.HighestLvlObjPolicy, 
+                                         agent_reeval_rate=config["agent_reeval_rate"])
     rwd_lst = []
     obj_pickup_rate = []
     try:
@@ -94,13 +93,10 @@ def run_hardcoded(env, config):
             obs = env.reset()
             tot_rwd = 0
             for k in range(100):
-                try:
-                    obs, rwd, done, _ = env.step()
-                    env.render()
-                    tot_rwd += sum(rwd)
-                    if any(done): break
-                except Exception as e:
-                    pass
+                obs, rwd, done, _ = env.step()
+                env.render()
+                tot_rwd += sum(rwd)
+                if any(done): break
 
             print(f"TOTAL REWARD: {tot_rwd}")
             rwd_lst.append(tot_rwd)
@@ -177,6 +173,7 @@ def register_env(id,config):
             "n_agents": config["robot_gym.N_agents"],
             "n_obj": config["robot_gym.N_obj"],
             "render": False,#not IBEX,
+            # "render": True,
             "comm": config["robot_gym.N_comm"],
             # "hardcoded_comm": config["robot_gym.hardcoded_comm"],
             "view_range": config["robot_gym.view_range"],

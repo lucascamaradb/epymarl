@@ -106,7 +106,7 @@ class CNNAgent(CustomAgent):
             # Continue normally
             return actions, torch.ones((2,))
         
-        reeval = True if self.reeval_prob==1 else (np.random.rand()<=self.reeval_prob)
+        reeval = True if self.reeval_prob==1 else (np.random.rand()<self.reeval_prob)
         if (not reeval) or (self.current_target_factor is None):
             # Keep target
             actions = -1e10*torch.ones_like(actions)
