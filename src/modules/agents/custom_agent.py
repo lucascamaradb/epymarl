@@ -33,7 +33,7 @@ class CNNAgent(CustomAgent):
 
         self.n_out_channels = int(args.n_actions/(input_shape[1]*input_shape[2]))
         self.target_shape = (self.n_out_channels,*input_shape[1:])
-        assert args.action_grid, "Only action grid supported"
+        # assert args.action_grid, "Only action grid supported"
         assert self.n_out_channels == 1, "Comms not supported"
         self.net, self.out_shape = net_from_string(args.agent_arch, self.in_shape, target_shape=self.target_shape)
         self.net = self.net.to(self.device)

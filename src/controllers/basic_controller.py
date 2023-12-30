@@ -14,6 +14,7 @@ class BasicMAC:
         self._build_agents(self.input_shape)
         self.agent_output_type = args.agent_output_type
         self.filter_avail_by_objects = args.filter_avail_by_objects
+        self.action_grid = args.action_grid
 
         self.action_selector = action_REGISTRY[args.action_selector](args)
 
@@ -25,6 +26,8 @@ class BasicMAC:
         # Constrain targets to objects
         if (self.filter_avail_by_objects is True) or (self.filter_avail_by_objects=="test" and test_mode):
             avail_actions = self._filter_avail(avail_actions, ep_batch["obs"][:, t_ep])
+        elif not self.action_grid:
+            avail_actions = self._filter_adjacent(avail_actions)
         agent_outputs, target_updates, env_info = self.forward(ep_batch, t_ep, test_mode=test_mode, env_info=env_info)
         chosen_actions, target_updates = self.action_selector.select_action(agent_outputs[bs], target_updates[bs], avail_actions[bs], t_env, test_mode=test_mode, env_info=env_info)
         return chosen_actions, target_updates
@@ -127,4 +130,20 @@ class BasicMAC:
             # Only apply constraint if at least one object is in view
             if obj_flag_sum[i,j]>0:
                 avail_actions[i,j] = th.logical_and(avail_actions[i,j], obj_flag[i,j].flatten())
+        return avail_actions
+    
+    def _filter_adjacent(self, avail_actions):
+        if self.action_grid:
+            return avail_actions
+        
+        adjacent = [(0,1),(1,0),(0,-1),(-1,0),(0,0),(1,1),(-1,-1),(1,-1),(-1,1)]
+        adjacent = [self.agent._dif_to_flat(x) for x in adjacent]
+        not_adjacent = [i for i in range(avail_actions.shape[-1]) if i not in adjacent]
+
+        avail_actions[:,:,not_adjacent] = 0
+        avail_actions[:,:,adjacent] = 1
+        # sz = avail_actions.shape[:-1]
+        # avail_actions[:,:,adjacent] = th.logical_and(avail_actions[:,:,adjacent], 
+        #                                              th.ones((*sz,len(adjacent))).to(avail_actions)).to(dtype=th.int32)
+
         return avail_actions
