@@ -67,6 +67,7 @@ DEFAULT_CONFIG = {
     "robot_gym.action_grid": True,
     "robot_gym.respawn": False,
     "robot_gym.obj_lvl_rwd_exp": 2.,
+    "robot_gym.view_self": False,
     "action_grid": True,
     "current_target_factor": None,
     "agent_reeval_rate": True,
@@ -145,6 +146,7 @@ def train(config=None, default=False, online=False):
         if config.get("env_args.hardcoded", False) == True:
             results_dict = run_hardcoded(gym.make(env_key), config)
             run.summary["best_test_return_mean"] = results_dict["return_mean"]
+            # run.summary["best_test_return_std"] = results_dict["return_std"]
             for k,v in results_dict.items():
                 run.summary[k] = v
         else:
@@ -181,6 +183,7 @@ def register_env(id,config):
             "Lsec": config["robot_gym.Lsec"],
             "one_hot_obj_lvl": True,
             "obj_lvl_rwd_exp": config["robot_gym.obj_lvl_rwd_exp"],
+            "view_self": config["robot_gym.view_self"],
             "max_obj_lvl": 3,
             "action_grid": config["robot_gym.action_grid"],
             "share_intention": config["robot_gym.share_intention"],
@@ -204,8 +207,8 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_paper/5opcfwfu"])
-        default_config = True # overrides config sent from W&B
+        args = parser.parse_args(["gridworld_paper/s3a3cmk0"])
+        default_config = False # overrides config sent from W&B
 
     sweep_id = args.wandb_sweep
     run_count = args.count if args.count > 0 else None
