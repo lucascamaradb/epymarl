@@ -29,6 +29,9 @@ class BasicMAC:
         elif not self.action_grid:
             avail_actions = self._filter_adjacent(avail_actions)
         agent_outputs, target_updates, env_info = self.forward(ep_batch, t_ep, test_mode=test_mode, env_info=env_info)
+        for k,v in env_info.items():
+            if v is not None:
+                env_info[k] = [v[i] for i in bs]
         chosen_actions, target_updates = self.action_selector.select_action(agent_outputs[bs], target_updates[bs], avail_actions[bs], t_env, test_mode=test_mode, env_info=env_info)
         return chosen_actions, target_updates
 

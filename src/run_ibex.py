@@ -68,16 +68,17 @@ DEFAULT_CONFIG = {
     "robot_gym.respawn": False,
     "robot_gym.obj_lvl_rwd_exp": 2.,
     "robot_gym.view_self": False,
-    "action_grid": True,
+    # "action_grid": True,
+    "action_grid": False,
     "current_target_factor": None,
     "agent_reeval_rate": True,
     "filter_avail_by_objects": False,
     # "robot_gym.share_intention": "path",
     # "share_intention": "path",
-    # "robot_gym.share_intention": False,
-    # "share_intention": False,
-    "robot_gym.share_intention": "channel",
-    "share_intention": "channel",
+    "robot_gym.share_intention": False,
+    "share_intention": False,
+    # "robot_gym.share_intention": "channel",
+    # "share_intention": "channel",
     "seed": 10,
     "t_max": 2_000_000,
     "env_args.curriculum": False,
@@ -183,7 +184,7 @@ def register_env(id,config):
             "Lsec": config["robot_gym.Lsec"],
             "one_hot_obj_lvl": True,
             "obj_lvl_rwd_exp": config["robot_gym.obj_lvl_rwd_exp"],
-            "view_self": config["robot_gym.view_self"],
+            "view_self": config.get("robot_gym.view_self", True),
             "max_obj_lvl": 3,
             "action_grid": config["robot_gym.action_grid"],
             "share_intention": config["robot_gym.share_intention"],
@@ -207,8 +208,8 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_paper/s3a3cmk0"])
-        default_config = False # overrides config sent from W&B
+        args = parser.parse_args(["gridworld_paper/v7f1ijmt", "-c", "1"])
+        default_config = True # overrides config sent from W&B
 
     sweep_id = args.wandb_sweep
     run_count = args.count if args.count > 0 else None
