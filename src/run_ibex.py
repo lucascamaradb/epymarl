@@ -56,7 +56,9 @@ DEFAULT_CONFIG = {
     "obs_agent_id": False,
     "robot_gym.Lsec": 2,
     "robot_gym.N_agents": 10,
+    # "env_args.hardcoded": False,
     "env_args.hardcoded": "comm",
+    # "env_args.hardcoded": True,
     "agent_distance_exp": 1.,
     "robot_gym.N_comm": 4,
     "robot_gym.N_obj": [4, 3, 3],
@@ -81,7 +83,7 @@ DEFAULT_CONFIG = {
     # "share_intention": "channel",
     "seed": 10,
     "t_max": 2_000_000,
-    "env_args.curriculum": False,
+    "env_args.curriculum": True, #################
     "standardise_returns": True, #################
 }
 
@@ -135,7 +137,10 @@ def train(config=None, default=False, online=False):
             os.makedirs(save_path)
 
         # Define environment key
-        env_key = register_env(run.id, config)
+        if config.get("env_args.curriculum", False):
+            env_key = register_curriculum_env(run.id, config)
+        else:
+            env_key = register_env(run.id, config)
         print(f"Environment: {env_key}")
 
         if config.get("current_target_factor", None) is not None:
@@ -169,7 +174,7 @@ def train(config=None, default=False, online=False):
             # Run EPyMARL training script
             main.main_from_arg(txt_args.split(' '))
 
-def register_env(id,config):
+def register_env(id, config):
     env_id = f"GridWorld-Custom-{id}-v0"
     kwargs={
             "sz": (config["robot_gym.size"], config["robot_gym.size"]),
@@ -200,6 +205,23 @@ def register_env(id,config):
     )
     return env_id
 
+def register_curriculum_env(id, config):
+    env_id = f"GridWorld-Curriculum-{id}-v0"
+    kwargs={
+            "render": False,
+            "train_args": config["robot_gym.train"],
+            "eval_args": config["robot_gym.eval"],
+        }
+    print(kwargs)
+
+    register(
+        id=env_id,
+        entry_point="robot_gym.env:CurriculumEnv",
+        kwargs=kwargs,
+        order_enforce=False, # VERY IMPORTANT!!!
+    )
+    return env_id
+
 if __name__ == "__main__":
     parser.add_argument("wandb_sweep", type=str, help="WANDB Sweep ID")
     parser.add_argument("-o", "--online", action="store_true", help="Upload experiment to WANDB")
@@ -208,8 +230,9 @@ if __name__ == "__main__":
         args = parser.parse_args()
         default_config = False
     except:
-        args = parser.parse_args(["gridworld_paper/v7f1ijmt", "-c", "1"])
-        default_config = True # overrides config sent from W&B
+        # args = parser.parse_args(["gridworld_paper/v7f1ijmt", "-c", "1"])
+        args = parser.parse_args(["gridworld_curriculum/5gjc2kjl", "-c", "1"])
+        default_config = False # overrides config sent from W&B
 
     sweep_id = args.wandb_sweep
     run_count = args.count if args.count > 0 else None

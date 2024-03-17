@@ -27,8 +27,8 @@ class GridworldWrapper(MultiAgentEnv):
         assert self.hardcoded in [False, "comm", "nav"], f"Unexpected value for env_args.hardcoded: {self.hardcoded}"
         env = gym.make(f"{key}")
 
-        if self.curriculum:
-            env = CurriculumWrapper(env)
+        # if self.curriculum:
+        #     env = CurriculumWrapper(env)
         
         if self.hardcoded == "comm":
             env = HardcodedCommWrapper(env, policy=TargetObjLvlCommPolicy)
