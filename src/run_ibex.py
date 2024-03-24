@@ -162,12 +162,14 @@ def train(config=None, default=False, online=False):
                 os.makedirs(save_path)
 
             # Define script to call
-            n_parallel = 20 if IBEX else min(cpu_count()//2, 20)
+            n_parallel = 16 if IBEX else min(cpu_count()//2, 16)
             # n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
             config["batch_size_run"] = n_parallel # add number of parallel envs to config
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # if config["config"] not in ["qmix", "vdn"]: txt_args += f" runner=parallel batch_size_run={n_parallel}"
             txt_args += f" runner=parallel batch_size_run={n_parallel}"
+            if not IBEX:
+                txt_args += " use_cuda=False"
             # if True: txt_args += f" runner=\"episode\" batch_size_run={1}"
             print("python3 " + txt_args)
 
@@ -231,7 +233,7 @@ if __name__ == "__main__":
         default_config = False
     except:
         # args = parser.parse_args(["gridworld_paper/v7f1ijmt", "-c", "1"])
-        args = parser.parse_args(["gridworld_curriculum/5gjc2kjl", "-c", "1"])
+        args = parser.parse_args(["gridworld_curriculum/sb75iye0", "-c", "1"])
         default_config = False # overrides config sent from W&B
 
     sweep_id = args.wandb_sweep

@@ -101,7 +101,13 @@ class EpisodeBatch:
 
             dtype = self.scheme[k].get("dtype", th.float32)
             try:
-                v = th.tensor(v, dtype=dtype, device=self.device)
+                if isinstance(v, list):
+                    v = th.from_numpy(np.array(v)).to(dtype=dtype, device=self.device)
+                elif isinstance(v, th.Tensor):
+                    v = v.to(dtype=dtype, device=self.device, copy=True)
+                else:
+                    v = th.tensor(v, dtype=dtype, device=self.device)
+                
             except ValueError:
                 print("Error in key: ", k)
                 raise ValueError
