@@ -162,7 +162,9 @@ def train(config=None, default=False, online=False):
                 os.makedirs(save_path)
 
             # Define script to call
-            n_parallel = 16 if IBEX else min(cpu_count()//2, 16)
+            n_parallel = config.get("buffer_size", None)
+            if n_parallel is None:
+                n_parallel = 16 if IBEX else min(cpu_count()//2, 16)
             # n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
             config["batch_size_run"] = n_parallel # add number of parallel envs to config
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
