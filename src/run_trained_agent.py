@@ -1,11 +1,10 @@
 import os
 import shutil
-import sys
 import wandb
 import numpy as np
 import argparse
-import threading
 import robot_gym
+from multiprocessing import cpu_count
 
 import gym
 from gym.envs.registration import register
@@ -19,6 +18,7 @@ scratch_dir = f"/ibex/user/{usr_name}/runs/" if IBEX \
 # sys.path.append(base_dir)
 
 import main
+import run as Run
 # from main import *
 
 parser = argparse.ArgumentParser(description="Gridworld Agent Visualization Script")
@@ -81,8 +81,10 @@ DEFAULT_CONFIG = {
 }
 
 EVAL_CONFIG = {
+    "robot_gym.size": 20,
     "robot_gym.N_agents": 10,
     "robot_gym.respawn": True,
+    "robot_gym.Lsec": 1,
     # "env_args.curriculum": True,
 }
 
@@ -190,11 +192,11 @@ def load_model(run):
 
     return run, file_dir
 
-def eval(run):
+def eval(run, eval_config=EVAL_CONFIG):
     run, checkpoint_path = load_model(run)
     config = run.config
     # Overwrite config with EVAL_CONFIG
-    config = main.recursive_dict_update(config, EVAL_CONFIG)
+    config = main.recursive_dict_update(config, eval_config)
     try:
         np.random.seed(config["seed"])
     except:
@@ -226,24 +228,31 @@ def eval(run):
             os.makedirs(save_path)
 
         # Define script to call
-        try:
-            n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else 6
-        except:
-            n_parallel = 6
+        n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else cpu_count()//2
         config["batch_size_run"] = n_parallel # add number of parallel envs to config
         txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=False'
         # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         # if config["config"] not in ["qmix", "vdn"]: txt_args += f" batch_size_run={n_parallel}"
-        txt_args += f" runner=\"episode\" batch_size_run={1} evaluate=True"
+        # txt_args += f" runner=\"episode\" batch_size_run={1} evaluate=True"
+        txt_args += f" runner=\"parallel\" batch_size_run={n_parallel} evaluate=True"
         # txt_args += f" runner=\"episode\" batch_size_run={1}"
         # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         txt_args += f' checkpoint_path="{checkpoint_path}" load_step={config["t_max"]}'
         print("python3 " + txt_args)
 
-        # Run EPyMARL training script
-        runner, buffer, learner = main.main_from_arg(txt_args.split(' '), just_build=True)
+        # Run EPyMARL evaluation script
+        runner, buffer, learner, args, logger = main.main_from_arg(txt_args.split(' '), just_build=True)
 
-        print(runner, buffer, learner)
+        runner.log_train_stats_t = runner.t_env
+        Run.evaluate_sequential(args, runner)
+        logger.log_stat("episode", runner.t_env, runner.t_env)
+        logger.print_recent_stats()
+        logger.console_logger.info("Finished Evaluation")
+
+        # print(runner, buffer, learner)
+        runner.close_env()
+
+        return logger.stats
 
 def register_env(id,config):
     env_id = f"GridWorld-Custom-{id}-v0"
@@ -252,6 +261,7 @@ def register_env(id,config):
             "n_agents": config["robot_gym.N_agents"],
             "n_obj": config["robot_gym.N_obj"],
             "render": False,#not IBEX,
+            # "render": True,
             "comm": config["robot_gym.N_comm"],
             # "hardcoded_comm": config["robot_gym.hardcoded_comm"],
             "view_range": config["robot_gym.view_range"],
@@ -278,7 +288,7 @@ if __name__ == "__main__":
     try:
         args = parser.parse_args()
     except:
-        args = parser.parse_args(["gridworld_paper/x9piqn8u"])
+        args = parser.parse_args(["gridworld_paper/pve40rdp"])
 
     # Run script
     eval(args.wandb_run)

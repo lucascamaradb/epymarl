@@ -218,12 +218,13 @@ class PPOLearner:
         th.save(self.agent_optimiser.state_dict(), "{}/agent_opt.th".format(path))
         th.save(self.critic_optimiser.state_dict(), "{}/critic_opt.th".format(path))
 
-    def load_models(self, path):
+    def load_models(self, path, eval=False):
         self.mac.load_models(path)
-        self.critic.load_state_dict(th.load("{}/critic.th".format(path), map_location=lambda storage, loc: storage))
-        # Not quite right but I don't want to save target networks
-        self.target_critic.load_state_dict(self.critic.state_dict())
+        if not eval:
+            self.critic.load_state_dict(th.load("{}/critic.th".format(path), map_location=lambda storage, loc: storage))
+            # Not quite right but I don't want to save target networks
+            self.target_critic.load_state_dict(self.critic.state_dict())
+            self.critic_optimiser.load_state_dict(
+                th.load("{}/critic_opt.th".format(path), map_location=lambda storage, loc: storage))
         self.agent_optimiser.load_state_dict(
             th.load("{}/agent_opt.th".format(path), map_location=lambda storage, loc: storage))
-        self.critic_optimiser.load_state_dict(
-            th.load("{}/critic_opt.th".format(path), map_location=lambda storage, loc: storage))

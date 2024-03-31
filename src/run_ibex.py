@@ -1,9 +1,7 @@
 import os
-import sys
 import wandb
 import numpy as np
 import argparse
-import threading
 import robot_gym
 from multiprocessing import cpu_count
 
