@@ -178,6 +178,7 @@ class ParallelRunner:
             post_transition_data = {
                 "reward": [],
                 "terminated": [],
+                "action_exec": [],
             }
             # Data for the next step we will insert in order to select an action
             pre_transition_data = {
@@ -196,6 +197,8 @@ class ParallelRunner:
                     # Store robot info
                     self.step_env_info[idx] = data["info"].copy()
                     data["info"].pop("robot_info")
+                    action_exec = data["info"].pop("action_exec")
+                    post_transition_data["action_exec"].append(action_exec)
 
                     # Remaining data for this current timestep
                     post_transition_data["reward"].append((data["reward"],))

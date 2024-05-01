@@ -111,13 +111,17 @@ class EpisodeRunner:
             reward, terminated, env_info = self.env.step(actions[0])
             episode_return += reward
             self.step_env_info = env_info.copy()
+
+            action_exec = env_info["action_exec"]
             env_info.pop("robot_info", None)
+            env_info.pop("action_exec", None)
 
             post_transition_data = {
                 "actions": actions,
                 "reward": [(reward,)],
                 "terminated": [(terminated != env_info.get("episode_limit", False),)],
                 "target_update": target_updates,
+                "action_exec": action_exec,
             }
 
             self.batch.update(post_transition_data, ts=self.t)

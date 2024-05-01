@@ -21,11 +21,12 @@ class TimeLimit(GymTimeLimit):
 
 class GridworldWrapper(MultiAgentEnv):
     def __init__(self, key, time_limit, pretrained_wrapper, **kwargs):
-        self.episode_limit = time_limit
+        self.comm_rounds = kwargs.pop("comm_rounds", 0)
+        self.episode_limit = time_limit*(self.comm_rounds+1)
         self.hardcoded = kwargs.pop("hardcoded", False)
         self.curriculum = kwargs.pop("curriculum", False)
         assert self.hardcoded in [False, "comm", "nav"], f"Unexpected value for env_args.hardcoded: {self.hardcoded}"
-        env = gym.make(f"{key}")
+        env = gym.make(f"{key}", comm_rounds=self.comm_rounds)
 
         # if self.curriculum:
         #     env = CurriculumWrapper(env)
@@ -36,7 +37,7 @@ class GridworldWrapper(MultiAgentEnv):
             env = HardcodedNavWrapper(env)
 
         env = EPyMARLWrapper(env)
-        self._env = TimeLimit(env, max_episode_steps=time_limit)
+        self._env = TimeLimit(env, max_episode_steps=self.episode_limit)
         # self._env = FlattenObservation(self._env)
 
         if pretrained_wrapper:

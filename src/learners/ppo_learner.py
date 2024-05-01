@@ -46,6 +46,7 @@ class PPOLearner:
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
         target_updates = batch["target_update"][:, :-1][...,1]
+        action_exec = batch["action_exec"][:, :-1][...,0]
         actions = actions[:, :-1]
         if self.args.standardise_rewards:
             self.rew_ms.update(rewards)
@@ -55,6 +56,7 @@ class PPOLearner:
         critic_mask = mask.clone() # the critic is trained at each step, independent of individual target updates
         # Filter out where target_update = 0
         mask = th.logical_and( mask, target_updates ).float()
+        mask = th.logical_and( mask, action_exec ).float()
 
         # No experiences to train on in this minibatch
         if mask.sum() == 0:

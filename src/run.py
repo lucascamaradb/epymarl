@@ -154,6 +154,7 @@ def build(args, logger):
         "reward": {"vshape": (1,)},
         "terminated": {"vshape": (1,), "dtype": th.uint8},
         "target_update": {"vshape": (2,), "group": "agents", "dtype": th.uint8},
+        "action_exec": {"vshape": (1,), "group": "agents", "dtype": th.uint8},
     }
     groups = {"agents": args.n_agents}
     preprocess = {"actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])}
