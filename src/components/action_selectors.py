@@ -84,7 +84,8 @@ REGISTRY["epsilon_greedy"] = EpsilonGreedyActionSelector
 
 class SoftPoliciesSelector(BaseSelector):
     def select_action(self, agent_inputs, target_updates, avail_actions, t_env, test_mode=False, env_info=None):
-        m = Categorical(agent_inputs)
+        probs = th.logical_and(agent_inputs, avail_actions)
+        m = Categorical(probs)
         picked_actions = m.sample().long()
         return picked_actions, self._target_updates(agent_inputs, target_updates, picked_actions, env_info)
 

@@ -69,24 +69,23 @@ DEFAULT_CONFIG = {
     "robot_gym.respawn": False,
     "robot_gym.obj_lvl_rwd_exp": 2.,
     "robot_gym.view_self": False,
-    # "action_grid": True,
-    "action_grid": False,
+    "action_grid": True,
+    # "action_grid": False,
     "current_target_factor": None,
     "agent_reeval_rate": True,
-    "filter_avail_by_objects": False,
-    # "robot_gym.share_intention": "path",
-    # "share_intention": "path",
-    "robot_gym.share_intention": False,
-    "share_intention": False,
+    "filter_avail_by_objects": True,
+    "robot_gym.share_intention": "path",
+    "share_intention": "path",
+    # "robot_gym.share_intention": False,
+    # "share_intention": False,
     # "robot_gym.share_intention": "channel",
     # "share_intention": "channel",
     "seed": 10,
     "t_max": 2_000_000,
     "env_args.curriculum": False, #################
     "standardise_returns": True, #################
-
-
     "env_args.comm_rounds": 5,
+    # "env_args.comm_rounds": 0,
 
 }
 
@@ -172,8 +171,8 @@ def train(config=None, default=False, online=False):
             config["batch_size_run"] = n_parallel # add number of parallel envs to config
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # if config["config"] not in ["qmix", "vdn"]: txt_args += f" runner=parallel batch_size_run={n_parallel}"
-            txt_args += f" runner=parallel batch_size_run={n_parallel}"
-            # txt_args += f" runner=\"episode\" batch_size_run={1}"
+            # txt_args += f" runner=parallel batch_size_run={n_parallel}"
+            txt_args += f" runner=\"episode\" batch_size_run={1}"
             if not IBEX:
                 txt_args += " use_cuda=False"
             print("python3 " + txt_args)
@@ -208,6 +207,7 @@ def register_env(id, config):
     register(
         id=env_id,
         entry_point="robot_gym.consensus_env:ConsensusEnv",
+        # entry_point="robot_gym.env:GridWorldEnv",
         kwargs=kwargs,
         order_enforce=False, # VERY IMPORTANT!!!
     )
