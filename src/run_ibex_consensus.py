@@ -163,6 +163,9 @@ def train(config=None, default=False, online=False):
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
 
+            config["q_nstep"] *= config["env_args.comm_rounds"]+1
+            config["gamma"] = config["gamma"]**(1/(config["env_args.comm_rounds"]+1))
+
             # Define script to call
             n_parallel = config.get("buffer_size", None)
             if n_parallel is None:
@@ -240,7 +243,7 @@ if __name__ == "__main__":
     except:
         # args = parser.parse_args(["gridworld_paper/v7f1ijmt", "-c", "1"])
         args = parser.parse_args(["gridworld_consensus/74r3y2cn", "-c", "1"])
-        default_config = True # overrides config sent from W&B
+        default_config = False # overrides config sent from W&B
 
     sweep_id = args.wandb_sweep
     run_count = args.count if args.count > 0 else None
