@@ -53,10 +53,11 @@ class PPOLearner:
             rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
 
         mask = mask.repeat(1, 1, self.n_agents)
+        mask = th.logical_and( mask, action_exec ).float()
         critic_mask = mask.clone() # the critic is trained at each step, independent of individual target updates
         # Filter out where target_update = 0
         mask = th.logical_and( mask, target_updates ).float()
-        mask = th.logical_and( mask, action_exec ).float()
+        # mask = th.logical_and( mask, action_exec ).float()
 
         # No experiences to train on in this minibatch
         if mask.sum() == 0:
