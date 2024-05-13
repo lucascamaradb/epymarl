@@ -10,6 +10,7 @@ from gym.envs.registration import register
 
 IBEX = True if os.path.exists("/ibex/") else False
 usr_name = os.environ["USER"]
+DSA = usr_name=="ubuntu"
 scratch_dir = f"/ibex/user/{usr_name}/runs/" if IBEX \
     else f"/home/{usr_name}/scratch/runs/"
 # base_dir = f"/home/{usr_name}/code/epymarl"
@@ -163,12 +164,12 @@ def train(config=None, default=False, online=False):
             n_parallel = config.get("buffer_size", None)
             if n_parallel is None:
                 n_parallel = 16 if IBEX else min(cpu_count()//2, 16)
-            # n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
+                # n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
             config["batch_size_run"] = n_parallel # add number of parallel envs to config
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # if config["config"] not in ["qmix", "vdn"]: txt_args += f" runner=parallel batch_size_run={n_parallel}"
             txt_args += f" runner=parallel batch_size_run={n_parallel}"
-            if not IBEX:
+            if not IBEX and not DSA:
                 txt_args += " use_cuda=False"
             # if True: txt_args += f" runner=\"episode\" batch_size_run={1}"
             print("python3 " + txt_args)

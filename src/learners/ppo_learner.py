@@ -65,8 +65,6 @@ class PPOLearner:
             self.logger.console_logger.error("Actor Critic Learner: mask.sum() == 0 at t_env {}".format(t_env))
             return
 
-        
-
         old_mac_out = []
         self.old_mac.init_hidden(batch.batch_size)
         for t in range(batch.max_seq_length - 1):

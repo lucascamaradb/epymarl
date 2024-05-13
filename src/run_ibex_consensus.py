@@ -10,6 +10,7 @@ from gym.envs.registration import register
 
 IBEX = True if os.path.exists("/ibex/") else False
 usr_name = os.environ["USER"]
+DSA = usr_name=="ubuntu"
 scratch_dir = f"/ibex/user/{usr_name}/runs/" if IBEX \
     else f"/home/{usr_name}/scratch/runs/"
 # base_dir = f"/home/{usr_name}/code/epymarl"
@@ -166,20 +167,20 @@ def train(config=None, default=False, online=False):
             config["t_max"]   *= config["env_args.comm_rounds"]+1
             config["q_nstep"] *= config["env_args.comm_rounds"]+1
             config["gamma"]    = config["gamma"]**(1/(config["env_args.comm_rounds"]+1))
-            config["target_update_interval_or_tau"] *= config["env_args.comm_rounds"]+1
+            # config["target_update_interval_or_tau"] *= config["env_args.comm_rounds"]+1
 
             # Define script to call
             n_parallel = config.get("buffer_size", None)
             if n_parallel is None:
                 n_parallel = 16 if IBEX else min(cpu_count()//2, 16)
-            # n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
+                # n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else min(cpu_count()//2, 16)
             config["batch_size_run"] = n_parallel # add number of parallel envs to config
             config["test_nepisode"] = config["test_nepisode"] - (config["test_nepisode"] % n_parallel)
             txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
             # if config["config"] not in ["qmix", "vdn"]: txt_args += f" runner=parallel batch_size_run={n_parallel}"
-            # txt_args += f" runner=parallel batch_size_run={n_parallel}"
-            txt_args += f" runner=\"episode\" batch_size_run={1}"
-            if not IBEX:
+            txt_args += f" runner=parallel batch_size_run={n_parallel}"
+            # txt_args += f" runner=\"episode\" batch_size_run={1}"
+            if not IBEX and not DSA:
                 txt_args += " use_cuda=False"
             print("python3 " + txt_args)
 
@@ -245,7 +246,7 @@ if __name__ == "__main__":
         default_config = False
     except:
         # args = parser.parse_args(["gridworld_paper/v7f1ijmt", "-c", "1"])
-        args = parser.parse_args(["gridworld_consensus/74r3y2cn", "-c", "1"])
+        args = parser.parse_args(["gridworld_consensus/vx2ir0rf", "-c", "1"])
         default_config = False # overrides config sent from W&B
 
     sweep_id = args.wandb_sweep
