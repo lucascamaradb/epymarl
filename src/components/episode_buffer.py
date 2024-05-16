@@ -107,10 +107,9 @@ class EpisodeBatch:
                     v = v.to(dtype=dtype, device=self.device, copy=True)
                 else:
                     v = th.tensor(v, dtype=dtype, device=self.device)
-                
             except ValueError:
-                print("Error in key: ", k)
-                raise ValueError
+                print(f"Error in key: {k}")
+                raise ValueError(f"Error in key: {k}")
             self._check_safe_view(v, target[k][_slices])
             target[k][_slices] = v.view_as(target[k][_slices])
 
