@@ -21,7 +21,8 @@ const_config = {
     "robot_gym.Lsec": 1,
     # "test_nepisode": 192,
     # "test_nepisode": 48,
-    "test_nepisode": 96,
+    # "test_nepisode": 96,
+    "test_nepisode": 32,
 }
 
 configs = [{**const_config, 
@@ -56,8 +57,8 @@ if __name__=="__main__":
     print(stats)
 
     if args.online:
-        id = args.wandb_run.split("/")[-1]
-        with wandb.init(project="gridworld_paper", id=id, resume="must") as run:
+        project, id = args.wandb_run.split("/")
+        with wandb.init(project=project, id=id, resume="must") as run:
             table = wandb.Table(data=stats, columns=["Number of Agents", "Average Reward"])
             wandb.log({"agent_scalability": wandb.plot.line(table, "Number of Agents", "Average Reward", title="Agent Scalability")})
             print("Done!")

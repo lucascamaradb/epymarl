@@ -81,10 +81,11 @@ DEFAULT_CONFIG = {
 }
 
 EVAL_CONFIG = {
+    "seed": 42,
     "robot_gym.size": 20,
     "robot_gym.N_agents": 10,
     "robot_gym.respawn": True,
-    "robot_gym.Lsec": 1,
+    "robot_gym.Lsec": 2,
     # "env_args.curriculum": True,
 }
 
@@ -207,7 +208,10 @@ def eval(run, eval_config=EVAL_CONFIG):
     os.makedirs(save_path, exist_ok=True)
 
     # Define environment key
-    env_key = register_env(run.id, config)
+    if config.get("env_args.curriculum", False):
+            env_key = register_curriculum_env(run.id, config)
+    else:
+        env_key = register_env(run.id, config)
     print(f"Environment: {env_key}")
 
     if config.get("current_target_factor", None) is not None:
@@ -278,6 +282,23 @@ def register_env(id,config):
     register(
         id=env_id,
         entry_point="robot_gym.env:GridWorldEnv",
+        kwargs=kwargs,
+        order_enforce=False, # VERY IMPORTANT!!!
+    )
+    return env_id
+
+def register_curriculum_env(id, config):
+    env_id = f"GridWorld-Curriculum-{id}-v0"
+    kwargs={
+            "render": False,
+            "train_args": config["robot_gym.train"],
+            "eval_args": config["robot_gym.eval"],
+        }
+    print(kwargs)
+
+    register(
+        id=env_id,
+        entry_point="robot_gym.env:CurriculumEnv",
         kwargs=kwargs,
         order_enforce=False, # VERY IMPORTANT!!!
     )

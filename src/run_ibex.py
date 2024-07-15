@@ -92,7 +92,7 @@ def run_hardcoded(env, config):
     rwd_lst = []
     obj_pickup_rate = []
     try:
-        for _ in range(100):
+        for _ in range(96):
             obs = env.reset()
             tot_rwd = 0
             for k in range(100):
