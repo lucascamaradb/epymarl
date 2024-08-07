@@ -32,7 +32,7 @@ for run in runs:
     for file in os.listdir(scratch_dir):
         if file.startswith(f"stats_{mod_wandb_run}"):
             print(f"Skipping {mod_wandb_run}")
-            continue
-    print(f"Computing {mod_wandb_run}")
-
-    eval_scalability(wandb_run, online=False)
+            break
+    else:
+        print(f"Computing {mod_wandb_run}")
+        eval_scalability(wandb_run, online=False)
