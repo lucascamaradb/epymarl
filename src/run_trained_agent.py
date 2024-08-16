@@ -209,7 +209,7 @@ def eval(run, eval_config=EVAL_CONFIG):
 
     # Define environment key
     if config.get("env_args.curriculum", False):
-            env_key = register_curriculum_env(run.id, config)
+        env_key = register_curriculum_env(run.id, config)
     else:
         env_key = register_env(run.id, config)
     print(f"Environment: {env_key}")
@@ -232,7 +232,8 @@ def eval(run, eval_config=EVAL_CONFIG):
             os.makedirs(save_path)
 
         # Define script to call
-        n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else cpu_count()//2
+        # n_parallel = int(os.getenv("SLURM_CPUS_PER_TASK")) if IBEX else cpu_count()//2
+        n_parallel = 16 # same as during training
         config["batch_size_run"] = n_parallel # add number of parallel envs to config
         txt_args = f'main.py --config={config["config"]} --env-config={config["env_config"]} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=False'
         # txt_args = f'main.py --config={config["config"]} --env-config=gridworld with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
@@ -242,12 +243,15 @@ def eval(run, eval_config=EVAL_CONFIG):
         # txt_args += f" runner=\"episode\" batch_size_run={1}"
         # txt_args = f'main.py --config=vdn --env-config={config.env_config} with env_args.key="{env_key}" {config2txt(config)}save_model=True save_path="{save_path}" wandb_sweep=True'
         txt_args += f' checkpoint_path="{checkpoint_path}" load_step={config["t_max"]}'
+        txt_args += f' use_cuda=False' ############### TODO: REMOVE THIS LINE
         print("python3 " + txt_args)
 
         # Run EPyMARL evaluation script
         runner, buffer, learner, args, logger = main.main_from_arg(txt_args.split(' '), just_build=True)
 
         runner.log_train_stats_t = runner.t_env
+        logger.console_logger.info("Evaluating...")
+        print("Evaluating...")
         Run.evaluate_sequential(args, runner)
         logger.log_stat("episode", runner.t_env, runner.t_env)
         logger.print_recent_stats()
